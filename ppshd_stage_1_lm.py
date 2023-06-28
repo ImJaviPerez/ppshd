@@ -117,6 +117,8 @@ def print_cosas():
     total_time = 0
     total_patients = 0
     patients_indices = []
+    patients_paper_indices = [1, 2, 3, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 25, 26, 27, 28, 29, 30, 34, 35, 38, 41, 42, 47, 48, 49, 50, 51, 53, 54, 56, 60, 61, 62, 63, 64, 65, 66, 69, 71, 72, 74, 75, 76, 79, 80, 85, 86, 87]
+    total_time_paper = 0
     print(instance.name)
     # instance.T.pprint()
     # instance.N.pprint()
@@ -128,7 +130,20 @@ def print_cosas():
             total_patients += 1
             patients_indices.append(i)
 
+    for i in patients_paper_indices:
+        total_time_paper += pyo.value(instance.x[i]) * pyo.value(instance.t[i])
+
+    print("RESULTS WITH SOLVER --------------------")
     print("patients_indices =", patients_indices)
     print("total_patients =", total_patients)
     print("total_time =", total_time)
+    print("model.OBJ =", pyo.value(instance.OBJ))
+
+    print("RESULTS IN PAPER -----------------------")
+    print("total_patients paper =", len(patients_paper_indices))
+    print("total_time_paper =", total_time_paper)
+    paper_obj = 0
+    for i in instance.N_set:
+        paper_obj += pyo.value(instance.p[i]) * pyo.value(instance.x[i])
+    print("PAPER.OBJ =", paper_obj)
 print_cosas()
