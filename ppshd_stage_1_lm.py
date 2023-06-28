@@ -1,13 +1,15 @@
 # ppshd_stage_1_lm.py 
-# Personnel and Patient Scheduling in the High Demanded Hospital Services: A Case Study in the Physiotherapy Service
-# S. Noyan Ogulata & Melik Koyuncu & Esra Karakas
-#
-# STAGE 1
-# Stage I: Patient Acceptance Planning
-# The purpose of this stage is to select patients that will be
-# scheduled for the following week from the candidate
-# patient list considering physiotherapist capacity and priority
-# of patients
+"""
+Personnel and Patient Scheduling in the High Demanded Hospital Services: A Case Study in the Physiotherapy Service
+By S. Noyan Ogulata & Melik Koyuncu & Esra Karakas
+
+STAGE 1
+Stage I: Patient Acceptance Planning
+The purpose of this stage is to select patients that will be
+scheduled for the following week from the candidate
+patient list considering physiotherapist capacity and priority
+of patients
+"""
 
 import ppshd_cfg
 
@@ -83,6 +85,7 @@ model.enough_time = pyo.Constraint(rule=enough_time_rule)
 
 
 opt = pyo.SolverFactory('glpk')
+# opt = pyo.SolverFactory('cplex')
 
 instance = model.create_instance(ppshd_cfg.LM_STAGE_1_DAT_FILE)
 
