@@ -2,8 +2,8 @@
 
 
 # Parameter
-# M : Number of initial patients
-param M := 90;
+# N : Number of initial patients
+param N := 90;
 
 # Parameter
 # t[i] : Treatment time of i-th patient in minutes
