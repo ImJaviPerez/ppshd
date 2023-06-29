@@ -136,12 +136,6 @@ def print_cosas():
     for i in patients_paper_indices:
         total_time_paper += pyo.value(instance.x[i]) * pyo.value(instance.t[i])
 
-    print("RESULTS WITH SOLVER --------------------")
-    print("patients_indices =", patients_indices)
-    print("total_patients =", total_patients)
-    print("total_time =", total_time)
-    print("model.OBJ =", pyo.value(instance.OBJ))
-
     print("RESULTS IN PAPER -----------------------")
     print("total_patients paper =", len(patients_paper_indices))
     print("total_time_paper =", total_time_paper)
@@ -149,4 +143,16 @@ def print_cosas():
     for i in instance.M_set:
         paper_obj += pyo.value(instance.p[i]) * pyo.value(instance.x[i])
     print("PAPER.OBJ =", paper_obj)
+
+    print("RESULTS WITH SOLVER --------------------")
+    print("patients_indices =", patients_indices)
+    print("total_patients =", total_patients)
+    print("total_time =", total_time)
+    print("model.OBJ =", pyo.value(instance.OBJ))
+    
+    print(" MORE RESULTS ---------------------------")
+    for i in patients_indices:
+        print("{:>2} {:>2}".format(i, pyo.value(instance.t[i])))
+
+
 print_cosas()
