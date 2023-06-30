@@ -78,7 +78,7 @@ model.K_set = pyo.Set(within=pyo.PositiveIntegers)
 # tc[i] : Time category for ith patients. (1 = short, 2 = long)
 # Create tc
 def tc_init(model, i):
-    if model.t[i] < 40:
+    if pyo.value(model.t[i]) < 40:
         return 1
     else:
         return 2
