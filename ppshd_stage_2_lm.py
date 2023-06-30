@@ -59,108 +59,97 @@ def h_rule(model):
 model.check_h = pyo.BuildCheck(rule=h_rule)
 
 
+# Set
+# W_set : Set of penalty weights coefficients
+model.W_set = pyo.Set(within=pyo.PositiveIntegers)
+
 # Parameter
-# Coefficients of
-# W1; W2; W3; W4; W5 in the objective function are the penalty
-# weights assigned to each goal prescribed.
+# W[w] : Penalty weights coefficients in the objective function
+# assigned to each goal prescribed.
 # Determination of these weights depends on the users preferences
-model.W = pyo.Param(within=pyo.PositiveIntegers, initialize=0)
+model.W = pyo.Param(model.W_set, within=pyo.PositiveIntegers)
 
 
+# Set
+# K_set : Time category number.
+# 1, and 2 were assigned to symbolize 
+# short-term (0–39 min), long-term (>40 min) respectively
+model.K_set = pyo.Set(within=pyo.PositiveIntegers)
 
 # VARIABLES -----------------------------------------------
 
-# variable
+# variables
 # G[j] : Total physiotherapy time assigned to j-th physiotherapist
 model.G = pyo.Var(model.S_set, within=pyo.NonNegativeIntegers, initialize=0)
-
-# ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         
-# ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         
-# ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         
-
-
-
+#
+# G_ave : Average physiotherapy time assigned to physiotherapists
+model.G_ave = pyo.Var(within=pyo.NonNegativeReals, initialize=0)
+#
+# d_range : number of d_plus variables to objetive function
+# model.d_plus_range = pyo.RangeSet(4)
+model.d_plus_range = pyo.Set(initialize=model.W_set[:-1])
+#
+# d_plus : Goals in objetive function
+#   d_plus[1] : represents the absolute deviation 
+#       from the goal of balanced time distribution among physiotherapists
+#
+#   d_plus[2] : absolute deviations 
+#       from the goal of balanced distribution of patients 
+#       in terms of time categories for short operations 
+#
+#    d_plus[3] : absolute deviations 
+#       from the goal of balanced distribution of patients 
+#       in terms of time categories for long operations
+# 
+#   d_plus[4] : TODO GIVE AN EXPLANATION TO THIS VARIABLE. I DONT KNOW WHAT IT IS
+model.d_plus = pyo.Var(model.d_plus_range, within=pyo.NonNegativeReals, initialize=0)
+#
+# d_minus_4 : is the deviation terms related to
+# loading physiotherapists below their daily capacitie
+model.d_minus_4 = pyo.Var(within=pyo.Reals, initialize=0)
+#
+# NP[jk] : Number of patients assigned to jth physiotherapist from k-th time category
+model.NP = pyo.Var(model.S_set, model.K_set, within=pyo.Binary, initialize=0)
+#
+# NP_ave[k] : Average number of patients assigned from k-th time category.
+model.NP_ave = pyo.Var(model.K_set, within=pyo.NonNegativeReals, initialize=0)
+#
+#
 # Decision variable
 # y[ij] : 
 #   1 if i-th patient is assigned to j-th physiotherapist
 #   0 otherwise
 model.y = pyo.Var(model.n_set, model.S_set, within=pyo.Binary, initialize=0)
 
-
-# ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         
-# ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         
-# ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         # ESTAS AQUI         
-
 # --------------------------------------------------------
 # --------------------------------------------------------
-# --------------------------------------------------------
-
-
-# Parameter
-# N : Number of patients
-model.N = pyo.Param(within=pyo.PositiveIntegers)
-
-def N_rule(model):
-    return model.N >= 1
-
-model.check_N = pyo.BuildCheck(rule=N_rule)
-
-# N_set : set of patiens
-model.N_set = pyo.RangeSet(model.N)
-
-# Parameter
-# S: Number of physiotherapists
-model.S = pyo.Param(within=pyo.PositiveIntegers)
-
-def S_rule(model):
-    return model.S >= 1
-
-model.check_S = pyo.BuildCheck(rule=S_rule)
-
-# Parameter
-# t[i] : Treatment time of i-th patient in minutes
-model.t = pyo.Param(model.N_set, within=pyo.NonNegativeIntegers, initialize=0)
-
-
-# Parameter
-# T : Total daily capacity
-model.T = pyo.Param(within=pyo.PositiveIntegers)
-
-def T_rule(model):
-    return model.T >= 1
-
-model.check_T = pyo.BuildCheck(rule=T_rule)
-
-
-# Parameter
-# p[i] : Weight of priority level for i-th patient
-model.p = pyo.Param(model.N_set, within=pyo.PositiveIntegers)
-def p_rule(model, i):
-    return model.p[i] >= 1
-
-model.check_p = pyo.BuildCheck(model.N_set, rule=p_rule)
-
-
-# Decision variable
-# x[i] : 
-#   1 if i-th patient is selected
-#   0 otherwise
-model.x = pyo.Var(model.N_set, within=pyo.Binary, initialize=0)
-
 
 # OBJETIVE FUNCTION AND CONSTRICTIONS ---------------
 # Maximize number of patients priority and time
 def obj_rule(model):
-    return pyo.sum_product(model.p, model.x)
+    return model.W[1] * model.d_plus[1] + model.W[2] * model.d_plus[2] + model.W[3] * model.d_plus[3] + model.W[4] * model.d_plus[4] + model.W[5] * model.d_minus_4
 
-model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.maximize)
+model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 
-# Constraint 1: SUM x * t <= T
-def enough_time_rule(model):
-    return pyo.sum_product(model.x, model.t, index=model.N_set) <= model.T
+# Constraint 1. Eq (4): d_plus[1] : absolute time deviation
+def d_plus_1_rule(model):
+    # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    return model.d_plus[1] == pyo.sum(model.G[j] - model.G_ave for j in model.S_set)
 
-model.enough_time = pyo.Constraint(rule=enough_time_rule)
+model.d_plus_1_costr = pyo.Constraint(rule=d_plus_1_rule)
 
+# Constraint 2. Eq (5): d_plus[1] : Total physiotherapy time assigned to jth physiotherapist
+def Gj_costr_rule(model, j):
+    return model.G[j] == pyo.sum(model.t[i] * model.y[i,j] for i in model.n_set)
+
+model.Gj_costr = pyo.Constraint(model.S_set, rule=Gj_costr_rule)
+
+
+# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    
+# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    
+
+
+# SOLVE ABSTRACT MODEL ------------------------------------
 
 opt = pyo.SolverFactory('glpk')
 # opt = pyo.SolverFactory('cplex')

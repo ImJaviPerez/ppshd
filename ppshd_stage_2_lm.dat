@@ -22,9 +22,12 @@ set n_set := 1 2 3 6 9 10 11 12 13 14 15 16 17 18 19 20 21 25 26 27 28 29 30 34 
 h := 480;
 
 # Parameter
-# Coefficients of
-# W1; W2; W3; W4; W5 in the objective function are the penalty
-# weights assigned to each goal prescribed.
+# W_set : Set of penalty weights coefficients
+set W_set := 1 2 3 4 5;
+
+# Parameter
+# Penalty weights coefficients in the objective function
+# assigned to each goal prescribed.
 # Determination of these weights depends on the users preferences
 param W :=
     1 1
@@ -33,3 +36,9 @@ param W :=
     4 1
     5 1
 ;
+
+# Set
+# K_set : Time category number.
+# 1, and 2 were assigned to symbolize 
+# short-term (0–39 min), long-term (>40 min) respectively
+set K_set := 1 2;
