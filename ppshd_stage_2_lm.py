@@ -78,6 +78,9 @@ model.K_set = pyo.Set(within=pyo.PositiveIntegers)
 # tc[i] : Time category for ith patients. (1 = short, 2 = long)
 # Create tc
 def tc_init(model, i):
+    # Because model elements result in expressions, not values, 
+    # the following does not work as expected in an abstract mode:
+    # if model.t[i] < 40:
     if pyo.value(model.t[i]) < 40:
         return 1
     else:
@@ -85,6 +88,19 @@ def tc_init(model, i):
     
 model.tc = pyo.Param(model.n_set, initialize=tc_init)
 
+
+# Set
+# set_tc[k] 
+def set_tc_k_init(model, k=1):
+    # set_aux = []
+    for i in model.n_set:
+        if pyo.value(model.tc[i]) == k:
+            yield i
+            #set_aux.append(i)
+    # return set_aux
+
+model.set_tc_1 = pyo.Set(1, initialize=set_tc_k_init)
+model.set_tc_2 = pyo.Set(2, initialize=set_tc_k_init)
 
 
 # VARIABLES -----------------------------------------------
@@ -177,6 +193,9 @@ model.d_plus_23_costr = pyo.Constraint(model.K_set, rule=d_plus_23_rule)
 # Constrainr. Eq (8): NP[j,k] : Number of patients assigned to j-th physiotherapist from k-th time category
 def NP_rule(model):
     return model.N[j,k] == pyo.sum()
+# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
+# USAR set_tc_1 set_tc_2
+# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
 
 model.NP_costr = pyo.Constraint(model.K_set, rule=NP_rule)
 
