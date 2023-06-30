@@ -34,7 +34,6 @@ model.n_set = pyo.Set(within=pyo.NonNegativeIntegers)
 # t[i] : Treatment time of i-th patient in minutes of selected patients
 model.t = pyo.Param(model.n_set, within=pyo.NonNegativeIntegers, initialize=0)
 
-
 # Parameter
 # S: Number of physiotherapists
 model.S = pyo.Param(within=pyo.PositiveIntegers)
@@ -69,12 +68,24 @@ model.W_set = pyo.Set(within=pyo.PositiveIntegers)
 # Determination of these weights depends on the users preferences
 model.W = pyo.Param(model.W_set, within=pyo.PositiveIntegers)
 
-
 # Set
 # K_set : Time category number.
 # 1, and 2 were assigned to symbolize 
 # short-term (0–39 min), long-term (>40 min) respectively
 model.K_set = pyo.Set(within=pyo.PositiveIntegers)
+
+# Parameter
+# tc[i] : Time category for ith patients. (1 = short, 2 = long)
+# Create tc
+def tc_init(model, i):
+    if model.t[i] < 40:
+        return 1
+    else:
+        return 2
+    
+model.tc = pyo.Param(model.n_set, initialize=tc_init)
+
+
 
 # VARIABLES -----------------------------------------------
 
@@ -108,7 +119,7 @@ model.d_plus = pyo.Var(model.d_plus_range, within=pyo.NonNegativeReals, initiali
 # loading physiotherapists below their daily capacitie
 model.d_minus_4 = pyo.Var(within=pyo.Reals, initialize=0)
 #
-# NP[jk] : Number of patients assigned to jth physiotherapist from k-th time category
+# NP[jk] : Number of patients assigned to j-th physiotherapist from k-th time category
 model.NP = pyo.Var(model.S_set, model.K_set, within=pyo.Binary, initialize=0)
 #
 # NP_ave[k] : Average number of patients assigned from k-th time category.
@@ -127,23 +138,47 @@ model.y = pyo.Var(model.n_set, model.S_set, within=pyo.Binary, initialize=0)
 # OBJETIVE FUNCTION AND CONSTRICTIONS ---------------
 # Maximize number of patients priority and time
 def obj_rule(model):
-    return model.W[1] * model.d_plus[1] + model.W[2] * model.d_plus[2] + model.W[3] * model.d_plus[3] + model.W[4] * model.d_plus[4] + model.W[5] * model.d_minus_4
+    # return model.W[1] * model.d_plus[1] + model.W[2] * model.d_plus[2] + model.W[3] * model.d_plus[3] + model.W[4] * model.d_plus[4] + model.W[5] * model.d_minus_4
+    return pyo.sum_product(model.W, model.d_plus, index=model.W_set) + model.W[5] * model.d_minus_4
 
 model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 
-# Constraint 1. Eq (4): d_plus[1] : absolute time deviation
+# Constraint. Eq (4): d_plus[1] : absolute time deviation
 def d_plus_1_rule(model):
     # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     return model.d_plus[1] == pyo.sum(model.G[j] - model.G_ave for j in model.S_set)
 
 model.d_plus_1_costr = pyo.Constraint(rule=d_plus_1_rule)
 
-# Constraint 2. Eq (5): d_plus[1] : Total physiotherapy time assigned to jth physiotherapist
+# Constraint. Eq (5): G[j] : Total physiotherapy time assigned to jth physiotherapist
 def Gj_costr_rule(model, j):
     return model.G[j] == pyo.sum(model.t[i] * model.y[i,j] for i in model.n_set)
 
 model.Gj_costr = pyo.Constraint(model.S_set, rule=Gj_costr_rule)
 
+# Constraint. Eq (6): G_ave : Average physiotherapy time assigned to physiotherapists
+def G_ave_costr_rule(model):
+    return model.G_ave == pyo.sum(model.G[j]/model.S for j in model.S_set)
+
+model.G_ave_costr = pyo.Constraint(rule=G_ave_costr_rule)
+
+# Constraint. Eq (7): d_plus[2], d_plus[3] : 
+#   Absolute deviations from the goal of balanced
+#   distribution of patients in terms of time categories,
+#   respectively for short and long operations 
+def d_plus_23_rule(model, k):
+    # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    return model.d_plus[k+1] == pyo.sum(model.NP[j,k] * model.NP_ave[k] for j in model.S_set)
+
+model.d_plus_23_costr = pyo.Constraint(model.K_set, rule=d_plus_23_rule)
+
+# Constrainr. Eq (8): NP[j,k] : Number of patients assigned to j-th physiotherapist from k-th time category
+def NP_rule(model):
+    return model.N[j,k] == pyo.sum()
+
+model.NP_costr = pyo.Constraint(model.K_set, rule=NP_rule)
 
 # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    
 # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    
