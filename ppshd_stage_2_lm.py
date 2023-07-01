@@ -82,15 +82,15 @@ def tc_init(model, i):
     # the following does not work as expected in an abstract mode:
     # if model.t[i] < 40:
     if pyo.value(model.t[i]) < 40:
-        return 1
+        yield 1
     else:
-        return 2
+        yield 2
     
 model.tc = pyo.Param(model.n_set, initialize=tc_init)
 
 
 # Set
-# set_tc[k] 
+# set_tc[k] : Set of patients indices with same value of k
 def set_tc_k_init(model, k=1):
     # set_aux = []
     for i in model.n_set:
@@ -99,6 +99,7 @@ def set_tc_k_init(model, k=1):
             #set_aux.append(i)
     # return set_aux
 
+# TODO : CREATE A SET (set_tc[]) WITH K_set DIMENSIONS
 model.set_tc_1 = pyo.Set(1, initialize=set_tc_k_init)
 model.set_tc_2 = pyo.Set(2, initialize=set_tc_k_init)
 
@@ -190,14 +191,17 @@ def d_plus_23_rule(model, k):
 
 model.d_plus_23_costr = pyo.Constraint(model.K_set, rule=d_plus_23_rule)
 
-# Constrainr. Eq (8): NP[j,k] : Number of patients assigned to j-th physiotherapist from k-th time category
-def NP_rule(model):
-    return model.N[j,k] == pyo.sum()
-# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
-# USAR set_tc_1 set_tc_2
-# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
+# Constraint. Eq (8): NP[j,k] : 
+# Number of patients assigned to j-th physiotherapist from k-th time category
+def NP_rule(model, k, j):
+    if pyo.value(k == 1):
+        return model.NP[j,k] == pyo.sum(model.y[i,j] for i in model.set_tc_1)
+    elif pyo.value(k == 2):
+        return model.NP[j,k] == pyo.sum(model.y[i,j] for i in model.set_tc_2)
+    else:
+        return pyo.Constraint.Skip
 
-model.NP_costr = pyo.Constraint(model.K_set, rule=NP_rule)
+model.NP_costr = pyo.Constraint(model.K_set, model.S_set, rule=NP_rule)
 
 # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    
 # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    
@@ -210,6 +214,35 @@ opt = pyo.SolverFactory('glpk')
 
 instance = model.create_instance(ppshd_cfg.LM_STAGE_1_DAT_FILE)
 
+def model_info():
+    """
+    Create string with model data information including parameters and sets
+    """
+    model_info_str = "\nn = " + pyo.value(instance.n)
+    model_info_str += "\nn_set = " + pyo.value(instance.n_set)
+    model_info_str = "\nS = " + pyo.value(instance.S)
+    model_info_str += "\nS_set = " + pyo.value(instance.S_set)
+    model_info_str += "\nh = " + pyo.value(instance.h)
+    model_info_str += "\nW_set = " + pyo.value(instance.W_set)
+    model_info_str += "\nW[] = " + pyo.value(instance.W[])
+    
+    str_aux = "\n"
+    for i in instance.W_set:
+        str_aux += "W["+i+"] = " + pyo.value(instance.W[i]) + ", "
+    model_info_str += str_aux
+    model_info_str += "\nK_set = " + pyo.value(instance.K_set)
+    
+    str_aux = "\n"
+    for i in instance.n_set:
+        str_aux += "tc["+i+"] = " + pyo.value(instance.tc[i]) + ", "
+    model_info_str += str_aux
+
+    model_info_str += "\nset_tc_1 = " + pyo.value(instance.set_tc_1)
+    model_info_str += "\nset_tc_2 = " + pyo.value(instance.set_tc_2)
+    
+    return model_info_str
+
+print(model_info())
 
 results = opt.solve(instance, load_solutions=False)  # solves and updates instance
 # @:tail
