@@ -4,7 +4,7 @@
 
 # -------------------------------------------------------------
 # This file include data and commands from ppshd_stage_1_lm.dat
-include ppshd_stage_1_lm.dat
+include ppshd_stage_1_lm.dat;
 # -------------------------------------------------------------
 
 # Parameter
@@ -19,7 +19,7 @@ set n_set := 1 2 3 6 9 10 11 12 13 14 15 16 17 18 19 20 21 25 26 27 28 29 30 34 
 # Parameter
 # h : Daily work minutes per each physiotherapist
 # 8 hours * 60 minutes
-h := 480;
+param h := 480;
 
 # Parameter
 # W_set : Set of penalty weights coefficients

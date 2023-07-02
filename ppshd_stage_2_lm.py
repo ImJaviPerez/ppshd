@@ -1,7 +1,7 @@
 # ppshd_stage_2_lm.py 
 """
 Personnel and Patient Scheduling in the High Demanded Hospital Services: A Case Study in the Physiotherapy Service
-By S. Noyan Ogulata & Melik Koyuncu & Esra Karakas
+By S. Noyan Ogulata, Melik Koyuncu, Esra Karakas
 
 STAGE 2
 Stage II: Patient Acceptance Planning.
@@ -15,6 +15,31 @@ import ppshd_cfg
 import pyomo.environ as pyo
 
 model = pyo.AbstractModel(name="Personnel and Patient Scheduling. Stage II")
+
+# BEGIN : Data from ppshd_stage_1_lm ----------------------
+# Parameter
+# N: Number of initial patients
+model.N = pyo.Param(within=pyo.PositiveIntegers)
+
+# Parameter
+# T : Total daily capacity
+model.T = pyo.Param(within=pyo.PositiveIntegers)
+
+# N_set : set of patiens
+model.N_set = pyo.RangeSet(model.N)
+
+# Parameter
+# p[i] : Weight of priority level for i-th patient
+model.p = pyo.Param(model.N_set, within=pyo.PositiveIntegers)
+def p_rule(model, i):
+    return model.p[i] >= 1
+model.check_p = pyo.BuildCheck(model.N_set, rule=p_rule)
+
+# Parameter
+# t[i] : Treatment time of i-th patient in minutes
+model.t = pyo.Param(model.N_set, within=pyo.NonNegativeIntegers, initialize=0)
+
+# END : Data from ppshd_stage_1_lm ------------------------
 
 
 # Parameter
@@ -30,9 +55,9 @@ model.check_n = pyo.BuildCheck(rule=n_rule)
 # n_set : set of selected patients
 model.n_set = pyo.Set(within=pyo.NonNegativeIntegers)
 
-# Parameter
-# t[i] : Treatment time of i-th patient in minutes of selected patients
-model.t = pyo.Param(model.n_set, within=pyo.NonNegativeIntegers, initialize=0)
+# # Parameter
+# # t[i] : Treatment time of i-th patient in minutes of selected patients
+# model.t = pyo.Param(model.n_set, within=pyo.NonNegativeIntegers, initialize=0)
 
 # Parameter
 # S: Number of physiotherapists
@@ -77,18 +102,19 @@ model.K_set = pyo.Set(within=pyo.PositiveIntegers)
 # Parameter
 # tc[i] : Time category for ith patients. (1 = short, 2 = long)
 # Create tc
-def tc_init(model, i):
+def tc_init(model):
     dict_aux = {}
-    # Because model elements result in expressions, not values, 
-    # the following does not work as expected in an abstract mode:
-    # if model.t[i] < 40:
-    if pyo.value(model.t[i]) < 40:
-        dict_aux[i].append(1)
-    else:
-        dict_aux[i].append(2)
+    for i in model.N_set:
+        # Because model elements result in expressions, not values, 
+        # the following does not work as expected in an abstract mode:
+        # if model.t[i] < 40:
+        if pyo.value(model.t[i]) < 40:
+            dict_aux[i] = 1 #.append(1)
+        else:
+            dict_aux[i] = 2 #.append(2)
     return dict_aux
-    
-model.tc = pyo.Param(model.n_set, initialize=tc_init)
+        
+model.tc = pyo.Param(model.N_set, initialize=tc_init)
 
 
 # Set
@@ -125,7 +151,7 @@ model.G_ave = pyo.Var(within=pyo.NonNegativeReals, initialize=0)
 #
 # d_range : number of d_plus variables to objetive function
 # TODO : NOT TO USE A NUMBER 4, USE A PARAMETER
-model.d_plus_range = pyo.RangeSet(4)
+model.d_plus_range = pyo.RangeSet(5)
 # model.d_plus_range = pyo.Set(initialize=model.W_set[:-1])
 #
 # d_plus : Goals in objetive function
@@ -136,7 +162,7 @@ model.d_plus_range = pyo.RangeSet(4)
 #       from the goal of balanced distribution of patients 
 #       in terms of time categories for short operations 
 #
-#    d_plus[3] : absolute deviations 
+#   d_plus[3] : absolute deviations 
 #       from the goal of balanced distribution of patients 
 #       in terms of time categories for long operations
 # 
@@ -176,7 +202,7 @@ model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 def d_plus_1_rule(model):
     # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    return model.d_plus[1] == pyo.sum(model.G[j] - model.G_ave for j in model.S_set)
+    return model.d_plus[1] == pyo.summation(model.G[j] - model.G_ave for j in model.S_set)
 
 model.d_plus_1_costr = pyo.Constraint(rule=d_plus_1_rule)
 
@@ -251,7 +277,16 @@ model.daily_j_work_constr = pyo.Constraint(model.S_set, rule=daily_j_work_rule)
 opt = pyo.SolverFactory('glpk')
 # opt = pyo.SolverFactory('cplex')
 
-instance = model.create_instance(ppshd_cfg.LM_STAGE_1_DAT_FILE)
+print("MODEL CONSTRUCTED = ", model.is_constructed())
+
+# data = pyo.DataPortal()
+# data.load(filename=ppshd_cfg.LM_STAGE_1_DAT_FILE, model=model)
+# data.load(filename=ppshd_cfg.LM_STAGE_2_DAT_FILE, model=model)
+# instance = model.create_instance(data)
+
+instance = model.create_instance(ppshd_cfg.LM_STAGE_2_DAT_FILE)
+
+print("INSTANCE CONSTRUCTED = ", instance.is_constructed())
 
 def model_info():
     """
