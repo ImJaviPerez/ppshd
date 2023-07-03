@@ -199,22 +199,24 @@ def obj_rule(model):
 model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 
 # Constraint. Eq (4): d_plus[1] : absolute time deviation
+import pyomo.core.util as pyo_util
+
 def d_plus_1_rule(model):
     # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    return model.d_plus[1] == pyo.summation(model.G[j] - model.G_ave for j in model.S_set)
+    return model.d_plus[1] == pyo_util.quicksum(model.G[j] - model.G_ave for j in model.S_set)
 
 model.d_plus_1_costr = pyo.Constraint(rule=d_plus_1_rule)
 
 # Constraint. Eq (5): G[j] : Total physiotherapy time assigned to jth physiotherapist
 def Gj_costr_rule(model, j):
-    return model.G[j] == pyo.sum(model.t[i] * model.y[i,j] for i in model.n_set)
+    return model.G[j] == pyo_util.quicksum(model.t[i] * model.y[i,j] for i in model.n_set)
 
 model.Gj_constr = pyo.Constraint(model.S_set, rule=Gj_costr_rule)
 
 # Constraint. Eq (6): G_ave : Average physiotherapy time assigned to physiotherapists
 def G_ave_costr_rule(model):
-    return model.G_ave == pyo.sum(model.G[j]/model.S for j in model.S_set)
+    return model.G_ave == pyo_util.quicksum(model.G[j]/model.S for j in model.S_set)
 
 model.G_ave_constr = pyo.Constraint(rule=G_ave_costr_rule)
 
@@ -225,7 +227,7 @@ model.G_ave_constr = pyo.Constraint(rule=G_ave_costr_rule)
 def d_plus_23_rule(model, k):
     # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    return model.d_plus[k+1] == pyo.sum(model.NP[j,k] * model.NP_ave[k] for j in model.S_set)
+    return model.d_plus[k+1] == pyo_util.quicksum(model.NP[j,k] * model.NP_ave[k] for j in model.S_set)
 
 model.d_plus_23_constr = pyo.Constraint(model.K_set, rule=d_plus_23_rule)
 
@@ -233,9 +235,9 @@ model.d_plus_23_constr = pyo.Constraint(model.K_set, rule=d_plus_23_rule)
 # Number of patients assigned to j-th physiotherapist from k-th time category
 def NP_rule(model, k, j):
     if pyo.value(k == 1):
-        return model.NP[j,k] == pyo.sum(model.y[i,j] for i in model.set_tc_1)
+        return model.NP[j,k] == pyo_util.quicksum(model.y[i,j] for i in model.set_tc_1)
     elif pyo.value(k == 2):
-        return model.NP[j,k] == pyo.sum(model.y[i,j] for i in model.set_tc_2)
+        return model.NP[j,k] == pyo_util.quicksum(model.y[i,j] for i in model.set_tc_2)
     else:
         return pyo.Constraint.Skip
 
@@ -244,21 +246,21 @@ model.NP_constr = pyo.Constraint(model.K_set, model.S_set, rule=NP_rule)
 # Constraint. Eq (9): NP_ave[k] : 
 # Average number of patients assigned from k-th time category.
 def NP_ave_rule(model, k):
-    return model.NP_ave[k] == pyo.sum(model.NP[j,k]/model.S for j in model.S_set)
+    return model.NP_ave[k] == pyo_util.quicksum(model.NP[j,k]/model.S for j in model.S_set)
 
 model.NP_ave_costr = pyo.Constraint(model.K_set, rule=NP_ave_rule)
 
 # Constraint (10) : d_plus[4] - d_minus_4 
 # is the deviation terms related to loading physiotherapists below their daily capacities
 def d_plus_d_minus_rule(model):
-    return model.d_plus[4] - model.d_minus_4 == pyo.sum(model.y[i,j] * model.t[i] - model.h * model.S for i in model.n_set for j in model.S_set)
+    return model.d_plus[4] - model.d_minus_4 == pyo_util.quicksum(model.y[i,j] * model.t[i] - model.h * model.S for i in model.n_set for j in model.S_set)
 
 model.d_plus_d_minus_constr = pyo.Constraint(rule=d_plus_d_minus_rule)
 
 # Constraint (11) : one_i_one_j
 # ensures that each patient is assigned to only one physiotherapist
 def one_i_one_j_rule(model, i):
-    return pyo.sum(model.y[i,j] for j in model.S_set) <= 1
+    return pyo_util.quicksum(model.y[i,j] for j in model.S_set) <= 1
 
 model.one_i_one_j_rule_constr = pyo.Constraint(model.n_set, rule=one_i_one_j_rule)
 
@@ -292,26 +294,49 @@ def model_info():
     """
     Create string with model data information including parameters and sets
     """
-    model_info_str = "\nn = " + pyo.value(instance.n)
-    model_info_str += "\nn_set = " + pyo.value(instance.n_set)
-    model_info_str = "\nS = " + pyo.value(instance.S)
-    model_info_str += "\nS_set = " + pyo.value(instance.S_set)
-    model_info_str += "\nh = " + pyo.value(instance.h)
-    model_info_str += "\nW_set = " + pyo.value(instance.W_set)
+    model_info_str = "\nn = " + str(pyo.value(instance.n))
+    str_aux = "\nn_set = "
+    for i in instance.n_set:
+        str_aux += str(pyo.value(i)) + ", "
+    model_info_str += str_aux
+    
+    model_info_str += "\nS = " + str(pyo.value(instance.S))
+    str_aux = "\nS_set = "
+    for i in instance.S_set:
+        str_aux += str(pyo.value(i)) + ", "
+    model_info_str += str_aux
+    
+    model_info_str += "\nh = " + str(pyo.value(instance.h))
+
+    str_aux = "\nW_set = "
+    for i in instance.W_set:
+        str_aux += str(pyo.value(i)) + ", "
+    model_info_str += str_aux
     
     str_aux = "\n"
     for i in instance.W_set:
-        str_aux += "W["+i+"] = " + pyo.value(instance.W[i]) + ", "
+        str_aux += "W["+str(i)+"] = " + str(pyo.value(instance.W[i])) + ", "
     model_info_str += str_aux
-    model_info_str += "\nK_set = " + pyo.value(instance.K_set)
+    
+    str_aux = "\nK_set = "
+    for i in instance.K_set:
+        str_aux += str(pyo.value(i)) + ", "
+    model_info_str += str_aux
     
     str_aux = "\n"
     for i in instance.n_set:
-        str_aux += "tc["+i+"] = " + pyo.value(instance.tc[i]) + ", "
+        str_aux += "tc["+str(i)+"] = " + str(pyo.value(instance.tc[i])) + ", "
     model_info_str += str_aux
 
-    model_info_str += "\nset_tc_1 = " + pyo.value(instance.set_tc_1)
-    model_info_str += "\nset_tc_2 = " + pyo.value(instance.set_tc_2)
+    str_aux = "\nset_tc_1 = "
+    for i in instance.set_tc_1:
+        str_aux += str(pyo.value(i)) + ", "
+    model_info_str += str_aux
+
+    str_aux = "\nset_tc_2 = "
+    for i in instance.set_tc_2:
+        str_aux += str(pyo.value(i)) + ", "
+    model_info_str += str_aux
     
     return model_info_str
 
