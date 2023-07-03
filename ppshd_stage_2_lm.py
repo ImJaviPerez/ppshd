@@ -97,6 +97,7 @@ model.W = pyo.Param(model.W_set, within=pyo.PositiveIntegers)
 # K_set : Time category number.
 # 1, and 2 were assigned to symbolize 
 # short-term (0–39 min), long-term (>40 min) respectively
+long_term = 40
 model.K_set = pyo.Set(within=pyo.PositiveIntegers)
 
 # Parameter
@@ -107,8 +108,8 @@ def tc_init(model):
     for i in model.N_set:
         # Because model elements result in expressions, not values, 
         # the following does not work as expected in an abstract mode:
-        # if model.t[i] < 40:
-        if pyo.value(model.t[i]) < 40:
+        # if model.t[i] < long_term:
+        if pyo.value(model.t[i]) < long_term:
             dict_aux[i] = 1 #.append(1)
         else:
             dict_aux[i] = 2 #.append(2)
@@ -405,15 +406,75 @@ def print_paper_results():
     print("RESULTS IN PAPER -----------------------")
     patients_paper_indices = [1, 2, 3, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 25, 26, 27, 28, 29, 30, 34, 35, 38, 41, 42, 47, 48, 49, 50, 51, 53, 54, 56, 60, 61, 62, 63, 64, 65, 66, 69, 71, 72, 74, 75, 76, 79, 80, 85, 86, 87]
     # patients for j phisioterapist:
-    patients_j1 = (75,35,52,41,56,1,62,19,49,20,6,13,21,30)
-    patients_j2 = (14,71,38,12,48,63,53,47,11,29,87,34,26,9)
-    patients_j3 = (61,25,15,69,27,50,64,16,54,42,86,10,18)
-    patients_j4 = (80,3,17,85,76,79,51,60,28,65,74,2,66)
+    patients_paper = [(75,35,52,41,56,1,62,19,49,20,6,13,21,30), \
+                (14,71,38,12,48,63,53,47,11,29,87,34,26,9), \
+                    (61,25,15,69,27,50,64,16,54,42,86,10,18), \
+                        (80,3,17,85,76,79,51,60,28,65,74,2,66)]
+    # d_plus_paper
+    d_plus_paper = [None] * pyo.value(instance.S)
+    # d_plus_paper
+    d_minus_paper = [None]
+    # G_paper : Total physiotherapy time assigned to j-th physiotherapist.
+    print("S =", str(pyo.value(instance.S)))
+    G_paper = [None] * pyo.value(instance.S)
+    for j in instance.S_set:
+        G_paper[j-1] = sum(instance.t[i] for i in patients_paper[j-1])
+        print("G_paper["+ str(j) +"]", str(G_paper[j-1]))
+    
+    # G_ave_paper : Average physiotherapy time assigned to physiotherapists.
+    for j in instance.S_set:
+        G_ave_paper = sum(G_paper[j-1] for j in instance.S_set)/pyo.value(instance.S)
+    print("G_ave_paper =", str(G_ave_paper))
 
-    paper_obj = 0
-    for i in instance.d_plus_range:
-        paper_obj += 0
-    print("NOT FINISHED ---------> PAPER.OBJ =", paper_obj)
+    # d_plus_paper[1]
+    d_plus_paper[1-1] = sum(abs(G_paper[j-1] - G_ave_paper) for j in instance.S_set)
+    print("d_plus_paper[1] =", d_plus_paper[1-1])
+
+    # NP_paper[j,k] : Number of patients_paper assigned to j-th physiotherapist from k-th time category
+    import numpy as np
+    NP_paper = np.zeros(shape=(pyo.value(instance.S), len(instance.K_set)))
+    for j in instance.S_set:
+        print("PAPER. phisioterapist", j)
+        for i in patients_paper[j-1]:
+            if instance.t[i] < long_term:
+                NP_paper[j-1, 1-1] +=1
+            else:
+                NP_paper[j-1, 2-1] +=1
+                # print("instance.t["+str(i)+"] =", str(instance.t[i]))
+        print("NP_paper["+str(j)+",1] =", str(NP_paper[j-1, 1-1]))
+        print("NP_paper["+str(j)+",2] =", str(NP_paper[j-1, 2-1]))
+    
+    # NP_ave_paper[k] : Average number of patients_paper assigned from k-th time category
+    NP_ave_paper = np.zeros(shape=(len(instance.K_set)))
+    for k in instance.K_set:
+        NP_ave_paper[k-1] = sum(NP_paper[j-1,k-1] for j in instance.S_set)/pyo.value(instance.S)
+        print("NP_ave_paper["+str(k)+"] =", str(NP_ave_paper[k-1]))
+
+    # d_plus_paper[2]
+    for k in instance.K_set:
+        d_plus_paper[k+1-1] = sum(abs(NP_paper[j-1, k-1] - NP_ave_paper[k-1]) for j in instance.S_set)
+        print("d_plus_paper["+str(k+1)+"] =", str(d_plus_paper[k+1-1]))
+
+    # d_minus_4_paper
+    d_minus_4_paper = 0
+    for j in instance.S_set:
+        for i in patients_paper[j-1]:
+            d_minus_4_paper += instance.t[i]
+
+    print("d_minus_4_paper =", d_minus_4_paper)
+
+
+    # Calculate paper objetive
+    print("Calculate paper objetive")
+    paper_obj = instance.W[5] * d_minus_4_paper
+
+    print("paper_obj =", str(paper_obj))
+    for j in instance.S_set:
+        print("d_plus_paper["+str(j)+"] =", str(d_plus_paper[j-1]))
+
+    for i in instance.S_set:
+        paper_obj += sum(instance.W[j] * d_plus_paper[j-1] for j in instance.S_set)
+    print("PAPER.OBJ =", str(paper_obj))
 
 
 
