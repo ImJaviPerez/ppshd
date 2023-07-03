@@ -227,7 +227,7 @@ model.G_ave_constr = pyo.Constraint(rule=G_ave_costr_rule)
 def d_plus_23_rule(model, k):
     # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    return model.d_plus[k+1] == pyo_util.quicksum(model.NP[j,k] * model.NP_ave[k] for j in model.S_set)
+    return model.d_plus[k+1] == pyo_util.quicksum(model.NP[j,k] - model.NP_ave[k] for j in model.S_set)
 
 model.d_plus_23_constr = pyo.Constraint(model.K_set, rule=d_plus_23_rule)
 
@@ -369,36 +369,23 @@ def run_solver():
 run_solver()
 
 def print_cosas():
-    total_time = 0
-    total_patients = 0
-    patients_indices = []
     patients_paper_indices = [1, 2, 3, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 25, 26, 27, 28, 29, 30, 34, 35, 38, 41, 42, 47, 48, 49, 50, 51, 53, 54, 56, 60, 61, 62, 63, 64, 65, 66, 69, 71, 72, 74, 75, 76, 79, 80, 85, 86, 87]
-    total_time_paper = 0
-    print(instance.name)
-    # instance.T.pprint()
-    # instance.N.pprint()
-    # instance.N_set.pprint()
-    for i in instance.N_set:
-        if pyo.value(instance.x[i]) != 0:
-            total_time += pyo.value(instance.x[i]) * pyo.value(instance.t[i])
-            # print("x[", i, "]=", pyo.value(instance.x[i]), ",, t[", i, "]=", pyo.value(instance.t[i]), ",, total_time =", total_time)
-            total_patients += 1
-            patients_indices.append(i)
 
-    for i in patients_paper_indices:
-        total_time_paper += pyo.value(instance.x[i]) * pyo.value(instance.t[i])
+    print(instance.name)
+    
+    str_aux = ""
+    for j in instance.S_set:
+        str_aux = "\nPhisioterapist " + str(j) + ", Patients : "
+        total_time_j = 0
+        for i in instance.n_set:
+            if pyo.value(instance.y[i,j]) != 0:
+                str_aux += str(i) + ", "
+                total_time_j += instance.t[i]
+        print(str_aux)
+        print("total_time_j[" + j + "] = ", total_time_j)
+
 
     print("RESULTS WITH SOLVER --------------------")
-    print("patients_indices =", patients_indices)
-    print("total_patients =", total_patients)
-    print("total_time =", total_time)
     print("model.OBJ =", pyo.value(instance.OBJ))
 
-    print("RESULTS IN PAPER -----------------------")
-    print("total_patients paper =", len(patients_paper_indices))
-    print("total_time_paper =", total_time_paper)
-    paper_obj = 0
-    for i in instance.N_set:
-        paper_obj += pyo.value(instance.p[i]) * pyo.value(instance.x[i])
-    print("PAPER.OBJ =", paper_obj)
 print_cosas()
