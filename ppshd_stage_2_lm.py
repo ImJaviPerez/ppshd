@@ -151,7 +151,7 @@ model.G_ave = pyo.Var(within=pyo.NonNegativeReals, initialize=0)
 #
 # d_range : number of d_plus variables to objetive function
 # TODO : NOT TO USE A NUMBER 4, USE A PARAMETER
-model.d_plus_range = pyo.RangeSet(5)
+model.d_plus_range = pyo.RangeSet(4)
 # model.d_plus_range = pyo.Set(initialize=model.W_set[:-1])
 #
 # d_plus : Goals in objetive function
@@ -194,7 +194,7 @@ model.y = pyo.Var(model.n_set, model.S_set, within=pyo.Binary, initialize=0)
 # Maximize number of patients priority and time
 def obj_rule(model):
     # return model.W[1] * model.d_plus[1] + model.W[2] * model.d_plus[2] + model.W[3] * model.d_plus[3] + model.W[4] * model.d_plus[4] + model.W[5] * model.d_minus_4
-    return pyo.sum_product(model.W, model.d_plus, index=model.W_set) + model.W[5] * model.d_minus_4
+    return pyo.sum_product(model.W, model.d_plus, index=model.d_plus_range) + model.W[5] * model.d_minus_4
 
 model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 
@@ -312,7 +312,12 @@ def model_info():
     for i in instance.W_set:
         str_aux += str(pyo.value(i)) + ", "
     model_info_str += str_aux
-    
+
+    str_aux = "\nd_plus_range = "
+    for i in instance.d_plus_range:
+        str_aux += str(pyo.value(i)) + ", "
+    model_info_str += str_aux
+
     str_aux = "\n"
     for i in instance.W_set:
         str_aux += "W["+str(i)+"] = " + str(pyo.value(instance.W[i])) + ", "
@@ -368,24 +373,50 @@ def run_solver():
 
 run_solver()
 
-def print_cosas():
-    patients_paper_indices = [1, 2, 3, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 25, 26, 27, 28, 29, 30, 34, 35, 38, 41, 42, 47, 48, 49, 50, 51, 53, 54, 56, 60, 61, 62, 63, 64, 65, 66, 69, 71, 72, 74, 75, 76, 79, 80, 85, 86, 87]
-
+def print_results():
     print(instance.name)
+
+    print("G_ave = ", pyo.value(instance.G_ave))
+    for k in instance.K_set:
+        print("NP_ave[" + str(k) +"] = ", pyo.value(instance.NP_ave[k]))
     
     str_aux = ""
     for j in instance.S_set:
-        str_aux = "\nPhisioterapist " + str(j) + ", Patients : "
+        str_aux = "\nPhisioterapist " + str(j) + ". Patients : "
         total_time_j = 0
+        short_time_j = 0
+        long_time_j = 0
         for i in instance.n_set:
             if pyo.value(instance.y[i,j]) != 0:
                 str_aux += str(i) + ", "
                 total_time_j += instance.t[i]
         print(str_aux)
-        print("total_time_j[" + j + "] = ", total_time_j)
+        print("total_time_j[" + str(j) + "] = ", str(total_time_j))
+        print("G[" + str(j) + "] = ", pyo.value(instance.G[j]))
+        for k in instance.K_set:
+            print("NP[" + str(j) + ", " + str(k) +"] = ", pyo.value(instance.NP[j,k]))
 
 
     print("RESULTS WITH SOLVER --------------------")
     print("model.OBJ =", pyo.value(instance.OBJ))
+    
 
-print_cosas()
+def print_paper_results():
+    print("RESULTS IN PAPER -----------------------")
+    patients_paper_indices = [1, 2, 3, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 25, 26, 27, 28, 29, 30, 34, 35, 38, 41, 42, 47, 48, 49, 50, 51, 53, 54, 56, 60, 61, 62, 63, 64, 65, 66, 69, 71, 72, 74, 75, 76, 79, 80, 85, 86, 87]
+    # patients for j phisioterapist:
+    patients_j1 = (75,35,52,41,56,1,62,19,49,20,6,13,21,30)
+    patients_j2 = (14,71,38,12,48,63,53,47,11,29,87,34,26,9)
+    patients_j3 = (61,25,15,69,27,50,64,16,54,42,86,10,18)
+    patients_j4 = (80,3,17,85,76,79,51,60,28,65,74,2,66)
+
+    paper_obj = 0
+    for i in instance.d_plus_range:
+        paper_obj += 0
+    print("NOT FINISHED ---------> PAPER.OBJ =", paper_obj)
+
+
+
+print_results()
+print_paper_results()
+
