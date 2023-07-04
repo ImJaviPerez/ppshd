@@ -1,0 +1,312 @@
+%\documentclass[a4paper,12pt]{report}
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{multirow}
+%\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{enumerate}
+\usepackage[toc,page]{appendix}
+\usepackage[nottoc]{tocbibind}
+\usepackage{color}
+\usepackage[dvipsnames]{xcolor}
+\definecolor{gray97}{gray}{.97}
+\definecolor{gray75}{gray}{.75}
+\definecolor{gray45}{gray}{.45}
+\usepackage{listings}
+\lstset{ frame=Ltb,
+	framerule=0pt,
+	aboveskip=0.5cm,
+	framextopmargin=3pt,
+	framexbottommargin=3pt,
+	framexleftmargin=0.4cm,
+	framesep=0pt,
+	rulesep=.4pt,
+	backgroundcolor=\color{gray97},
+	rulesepcolor=\color{black},
+	%
+	stringstyle=\ttfamily,
+	showstringspaces = false,
+	basicstyle=\small\ttfamily,
+	commentstyle=\color{gray45},
+	keywordstyle=\bfseries,
+	%
+	numbers=left,
+	numbersep=15pt,
+	numberstyle=\tiny,
+	numberfirstline = false,
+	breaklines=true,
+}
+
+% minimizar fragmentado de listados
+\lstnewenvironment{listing}[1][]
+{\lstset{#1}\pagebreak[0]}{\pagebreak[0]}
+
+\lstdefinestyle{consola}
+{basicstyle=\scriptsize\bf\ttfamily,
+	backgroundcolor=\color{gray75},
+}
+
+\lstdefinestyle{C}
+{language=C,
+}
+\usepackage[top=2cm]{geometry}
+\pretolerance=2000
+\tolerance=3000
+
+% ------------- Inicio paquetes adicionales fjp ----------------
+%
+% Inicio todonotes: Para usar el comando todonotes
+%\usepackage{todonotes}
+%\usepackage[disable]{todonotes}
+\usepackage[]{todonotes}
+
+% Use more than one optional parameter in a new commands
+\usepackage{xargs}
+%\usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
+% 
+%\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+% Fin todonotes: Para usar el comando todonotes
+
+% Inicio comment: Para comentar trozos del documento
+\usepackage{comment}
+% 
+% 2   Usage:
+% The ‘comment’ environment is defined by default: all text included between
+% \begin{comment}
+% ...
+% \end{comment}
+% is discarded.
+% The opening and closing commands should appear on a line of their own. No starting
+% spaces, nothing after it. This environment should work with arbitrary amounts of
+% comment, and the comment can be arbitrary text.
+%
+% Si no haces esto aparece el error:
+% latex error File ended while scanning use of \next.
+%
+% Fin comment: Para comentar trozos del documento
+%
+
+% Para incluir matrices con labels y bloques
+\usepackage{blkarray}
+\usepackage{multirow}
+
+% Para incluir grafos
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning}
+\usetikzlibrary{automata,arrows,positioning,calc}
+%With PGF/TikZ version 3.0.0 there's a babel library that solves the problems produced by changes to category codes made by some babel modules
+\usetikzlibrary{babel}
+
+% para usar dcases
+\usepackage{mathtools} 
+
+% Para incluir codigo y con suerte formatearlo
+\usepackage{listings}
+
+\usepackage{color}
+
+\definecolor{eclipse-keywords}{rgb}{0.55,0,0.337}
+\definecolor{eclipse-strings}{rgb}{0.165,0,1}
+\definecolor{eclipse-comments}{rgb}{0.247,0.498,0.373}
+
+
+
+% Para incluir el paquete lpform: Linear Programming Formulas
+% The ‘lpform.sty’ file should also be in the same folder as your .tex file.
+\usepackage{lpform}
+% When adding equations inside the lpformulation environment, itis important that there are NO empty lines, as this will cause an error to occur.
+
+% Para ajustar tabla grade a pagina
+\usepackage{adjustbox}
+
+% ------------- Fin paquetes adicionales fjp ----------------
+
+
+\begin{document}
+	
+% Instruccion para dar formato al codigo OPL
+\lstdefinelanguage[]{OPL}%
+{
+	classoffset=0,
+	keywords={maximize, minimize, subject, to, for, forall, sum, solve, int, int+, float, float+, dvar, boolean, enum, ftoi, mod, abs, maxint, sqrt, ceil, floor, distToInt, frac, trunc, infinity, first, last, card, ord, next, prev, range, in, struct, prod, min, max, union, inter, not, initialize, var, dmin, dmax, dsize, bound, dnexthigher, alldifferent, circuit, distribute, try, endtry, tryall, if, endif, then, else, while, select, once, search, when, onValue, generate, generationMin, generationMax, generateSeq, writeln, execute},
+	%keywordstyle=\color{eclipse-keywords}\bfseries,
+	keywordstyle=\color{blue}, %\bfseries,
+	classoffset=1,
+	morekeywords={..,=,<,>,<=,=>,==},
+	keywordstyle=\color{black}\bfseries,
+	classoffset=0,
+	comment=[l][\color{eclipse-comments}]{//},%
+	morecomment=[s][\color{eclipse-comments}]{/*}{*/},%
+	string=[b][\color{eclipse-strings}]\``,%
+	morestring=[b][\color{eclipse-strings}]',%
+	basicstyle=\small, %\sffamily,
+	tabsize=4,
+	showstringspaces=false,
+	numbers=none, %left, %% number lines
+	numberstyle=\tiny, %% the style of the numbers in the side
+	numberblanklines=true,
+	showspaces=false,
+	showtabs=false,
+}[keywords,comments,strings]% 
+
+
+
+\begin{titlepage}
+	\begin{sffamily}
+		\color{NavyBlue}
+		\begin{center}
+			%\vspace*{-1cm}
+			\begin{figure}[htb]
+				\begin{center}
+					\vspace*{0.6cm}
+					%\includegraphics[width=15cm]{logoEHU_blanco_mediano.ps}
+					\includegraphics[width=15cm]{logoEHU_blanco_mediano.eps}
+					\vspace*{1.6cm}
+				\end{center}
+			\end{figure}
+			\begin{LARGE}
+				Máster Universitario en Modelización e Investigación Matemática, Estadística y Computación 
+				2018/2019 \\%indicar el curso académico
+				\vspace*{1cm}
+				\textsl{Personnel and Patient Scheduling in the High Demanded
+					Hospital Services: A Case Study in the Physiotherapy Service}\\
+			\end{LARGE}
+			\Huge{\textbf{ERRATA}}\\ %Más significativo que el anterior
+			\vspace*{1cm}
+			\rule{80mm}{0.1mm}\\
+			\huge{F. Javier Pérez Ramírez}\\ %Separar cada autor con \\ 
+			\vspace*{0.5cm}
+			\begin{Large}
+				Bilbao julio 2023\\
+			\end{Large}
+		\end{center}
+	\end{sffamily}
+\end{titlepage}
+
+%\frontmatter
+\pagestyle{fancy}
+\fancyhead{} % Clear all header fields
+\setlength\headheight{21.2pt}
+\rhead{\color{NavyBlue} Airoa crew rostering} %Poner encabezado
+
+\renewcommand{\tablename}{\textbf{Tabla}} %para poner la palabra en mayuscula
+\renewcommand{\figurename}{\textbf{Figura}} % para poner la palabra en mayuscula
+\renewcommand{\listtablename}{Índice de tablas}
+
+\title{}
+\date{}
+\maketitle
+
+
+\clearpage
+\pagenumbering{Roman}
+\setcounter{page}{1}
+
+\tableofcontents
+%\thispagestyle{empty}
+
+%\listoffigures
+%\thispagestyle{empty}
+
+%\listoftables
+%\thispagestyle{empty}
+
+%Para imagenes
+%\begin{figure}[H]
+%\centering
+%\includegraphics[scale=0.8]{imagenes/*.png}
+%\caption{}
+%\end{figure}
+
+
+
+%\mainmatter
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+
+% -------------- Inicio comandos adicionales fjp -----------------------------
+%
+% Para incluir comentarios
+\newcommandx{\unsure}[2][1=]{\todo[inline,linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+\newcommandx{\info}[2][1=]{\todo[inline,linecolor=green,backgroundcolor=green!25,bordercolor=green,#1]{#2}}
+%
+%
+% -------------- fin comandos adicionales fjp -----------------------------
+
+
+
+%Comenzar el trabajo
+
+%\chapter{Problemas de Modelos de logística. Bloque 2.}
+There are some errata in the paper: Personnel and Patient Scheduling in the High Demanded. Hospital Services: A Case Study in the Physiotherapy Service. By S. Noyan Ogulata, Melik Koyuncu, Esra Karakas\cite{ogulata2008personnel}.
+
+\section{Model}
+\begin{description}
+	\item[$N$] Number of patients
+	\item[$n$] Number of selected patients
+	\item[$S$] Number of physiotherapists
+	\item[$m$] Number of time intervals
+	\item[$c$] Maximum number of patients assigned to each physiotherapist
+	\item[$i$] Patient number
+	\item[$j$] Physiotherapist number
+	\item[$l$] Time intervals number
+	\item[$k$] Time category number
+	\item[$h$] Daily work minutes per each physiotherapist
+	\item[$t_i$] Treatment time of $i$th patient
+	\item[$T$] Total daily capacity
+	\item[$p_i$] Weight of priority level for $i$th patient
+	\item[$G_j$] Total physiotherapy time assigned to $j$th physiotherapist.
+	\item[$\overline{G}$] Average physiotherapy time assigned to physiotherapists.
+	\item[$N_{jk}$] Number of patients assigned to $j$th physiotherapist from $k$th time category.
+	\item[$\overline{N}_k$] Average number of patients assigned from $k$th time category.
+	\item[$tc_i$] Time category for ith patients. (1 = short, 2 = long)
+	\item[$TI_l$] Total physiotherapy time assigned to $l$th time intervals
+	\item[$\overline{Tl}$] Average physiotherapy time assigned to time intervals
+\end{description}
+
+\begin{lpformulation}
+	% \lpobj[eq:obj]{min}{\sum_{s = 0}^{m-1} x_{t+s} \cdot \delta_s}
+	\lpeq[eq:constr05]{G_j = \sum_{i=1}^{n} t_i y_{ij},}{j \in \{1, \ldots, S\};}
+	\lpeq[eq:constr06]{\overline{G} = \sum_{j=1}^{S} G_j /S}{}
+	\lpeq[eq:constr07]{d_{k+1^{+}} = \sum_{j=1}^{S} \lvert N_{jk} - \overline{N} \rvert ,}{k \in \{1,2\}}
+	\lpeq[eq:constr08]{N_{jk} = \sum_{j=1}^{S} \sum_{i | tc_i = k} y_{ij},}{k \in \{1,2\}}
+\end{lpformulation}
+
+Equation (10) defines $d_4^+$ using $d_4^-$, so we need one more independent equation to define one of these variables. Or we can do next trick:
+\begin{lpformulation}
+	\lpnewsubeq[eq:constr10a]{d_4^+ = \sum_{i=1}^{n} \sum_{j=1}^{S} y_{ij} t_i}{}
+	\lpsubeq[eq:constr10b]{d_4^- = h S - d_4^+}{}
+\end{lpformulation}
+And we can say:
+\begin{description}
+	\item[$d_4^+$] Physiotherapists loading daily capacities.
+	\item[$d_4^-$] Deviation terms related to loading physiotherapists below their daily capacities.
+\end{description}
+
+
+\unsure{REHACER TABLA 3 DEL PAPER}{}
+
+	
+\section{Créditos y fuentes.}
+	
+	\begin{itemize}
+		\item Este documento ha sido escrito en \LaTeX con el editor gratuito  \href{https://www.texstudio.org/}{TeXstudio}.
+		\item Debo mencionar en este apartado a IBM por proporcionar a la Universidad del País Vasco (UPV/EHU) una licencia académica de CPLEX \texttrademark con la que he podido realizar mis cálculos y avanzar en mis conocimientos.
+	\end{itemize}
+	
+	
+	%\phantomsection
+	%\addcontentsline{toc}{chapter}{BIBLIOGRAFÍA}
+	\bibliographystyle{plain}
+	\bibliography{./BibliografiaML}
+	
+\end{document}

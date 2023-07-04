@@ -251,12 +251,20 @@ def NP_ave_rule(model, k):
 
 model.NP_ave_costr = pyo.Constraint(model.K_set, rule=NP_ave_rule)
 
-# Constraint (10) : d_plus[4] - d_minus_4 
-# is the deviation terms related to loading physiotherapists below their daily capacities
-def d_plus_d_minus_rule(model):
-    return model.d_plus[4] - model.d_minus_4 == pyo_util.quicksum(model.y[i,j] * model.t[i] - model.h * model.S for i in model.n_set for j in model.S_set)
+# Constraint Eq (10a) : d_plus[4]
+# Physiotherapists loading daily capacities
+def d_plus_4_rule(model):
+    return model.d_plus[4] == pyo_util.quicksum(model.y[i,j] * model.t[i] for i in model.n_set for j in model.S_set)
 
-model.d_plus_d_minus_constr = pyo.Constraint(rule=d_plus_d_minus_rule)
+model.d_plus_4_rule_constr = pyo.Constraint(rule=d_plus_4_rule)
+
+# Constraint Eq (10b) : d_minus_4
+# is the deviation terms related to loading physiotherapists below their daily capacities
+def d_minus_4_rule(model):
+    return model.d_minus_4 == model.h * model.S - model.d_plus[4]
+
+model.d_minus_4_rule_constr = pyo.Constraint(rule=d_minus_4_rule)
+
 
 # Constraint (11) : one_i_one_j
 # ensures that each patient is assigned to only one physiotherapist
@@ -411,9 +419,8 @@ def print_paper_results():
                     (61,25,15,69,27,50,64,16,54,42,86,10,18), \
                         (80,3,17,85,76,79,51,60,28,65,74,2,66)]
     # d_plus_paper
-    d_plus_paper = [None] * pyo.value(instance.S)
+    d_plus_paper = [None] * pyo.value(4)
     # d_plus_paper
-    d_minus_paper = [None]
     # G_paper : Total physiotherapy time assigned to j-th physiotherapist.
     print("S =", str(pyo.value(instance.S)))
     G_paper = [None] * pyo.value(instance.S)
@@ -450,17 +457,20 @@ def print_paper_results():
         NP_ave_paper[k-1] = sum(NP_paper[j-1,k-1] for j in instance.S_set)/pyo.value(instance.S)
         print("NP_ave_paper["+str(k)+"] =", str(NP_ave_paper[k-1]))
 
-    # d_plus_paper[2]
+    # d_plus_paper[2], d_plus_paper[3]
     for k in instance.K_set:
         d_plus_paper[k+1-1] = sum(abs(NP_paper[j-1, k-1] - NP_ave_paper[k-1]) for j in instance.S_set)
         print("d_plus_paper["+str(k+1)+"] =", str(d_plus_paper[k+1-1]))
-
-    # d_minus_4_paper
-    d_minus_4_paper = 0
+    
+    # d_plus_paper[4]
+    d_plus_paper[4-1] = 0
     for j in instance.S_set:
         for i in patients_paper[j-1]:
-            d_minus_4_paper += instance.t[i]
+            d_plus_paper[4-1] += instance.t[i]
+    print("d_plus_paper[4] =", d_plus_paper[4-1])
 
+    # d_minus_4_paper
+    d_minus_4_paper = instance.h * instance.S - d_plus_paper[4-1]
     print("d_minus_4_paper =", d_minus_4_paper)
 
 
