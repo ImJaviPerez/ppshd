@@ -202,12 +202,37 @@ model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 # Constraint. Eq (4): d_plus[1] : absolute time deviation
 import pyomo.core.util as pyo_util
 
-def d_plus_1_rule(model):
+# import pyomo.core.expr.current as pyo_curr
+
+def d_plus_1_rule_OLD(model):
     # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # return model.d_plus[1] == pyo_util.quicksum(pyo_curr.AbsExpression(model.G[j] - model.G_ave) for j in model.S_set)
     return model.d_plus[1] == pyo_util.quicksum(model.G[j] - model.G_ave for j in model.S_set)
 
-model.d_plus_1_costr = pyo.Constraint(rule=d_plus_1_rule)
+# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI
+# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI
+# Big Mh: Maximum daily work minutes per each physiotherapist
+model.Mh = pyo.Param(initialize=model.h + 1)
+model.d_plus_1_bin =pyo.Var(model.S_set, within=pyo.Binary, initialize=0)
+
+def d_plus_1_rule_a(model):
+    # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # return model.d_plus[1] == pyo_util.quicksum(pyo_curr.AbsExpression(model.G[j] - model.G_ave) for j in model.S_set)
+    model.d_plus_1_expr_aux = pyo.Expression(expr=0)
+    for j in model.S_set:
+
+        if model.G[j] >= model.G_ave:
+            model.d_plus_1_aux += model.G[j] - model.G_ave
+        else:
+            model.d_plus_1_aux += model.G_ave - model.G[j]
+    
+    return model.d_plus[1] == model.d_plus_1_aux
+
+model.d_plus_1_costr_a = pyo.Constraint(rule=d_plus_1_rule_a)
+# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI
+# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI
 
 # Constraint. Eq (5): G[j] : Total physiotherapy time assigned to jth physiotherapist
 def Gj_costr_rule(model, j):

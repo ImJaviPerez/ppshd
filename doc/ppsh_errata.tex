@@ -281,7 +281,7 @@ There are some errata in the paper: Personnel and Patient Scheduling in the High
 	\lpeq[eq:constr08]{N_{jk} = \sum_{j=1}^{S} \sum_{i | tc_i = k} y_{ij},}{k \in \{1,2\}}
 \end{lpformulation}
 
-Equation (10) defines $d_4^+$ using $d_4^-$, so we need one more independent equation to define one of these variables. Or we can do next trick:
+Equation (10) in the paper defines $d_4^+$ using $d_4^-$, so we need one more independent equation to define one of these variables. Or we can do next trick:
 \begin{lpformulation}
 	\lpnewsubeq[eq:constr10a]{d_4^+ = \sum_{i=1}^{n} \sum_{j=1}^{S} y_{ij} t_i}{}
 	\lpsubeq[eq:constr10b]{d_4^- = h S - d_4^+}{}
@@ -291,6 +291,18 @@ And we can say:
 	\item[$d_4^+$] Physiotherapists loading daily capacities.
 	\item[$d_4^-$] Deviation terms related to loading physiotherapists below their daily capacities.
 \end{description}
+
+The equation (4) in the paper get the funtion \textit{absolute} value which is not linear. We have to change that equation with a linear pair of constraints and finally we have to calculate the summation:
+\begin{lpformulation}
+	\lpnewsubeq[eq:constr04a]{(G_j - \overline{G}) + M \cdot B_j \ge = 0}{j \in \{1, \ldots, S\};}
+	\lpsubeq[eq:constr04b]{d_4^- = h S - d_4^+}{}
+	\lpsubeq[eq:constr04c]{d_1^+ = h S - d_4^+}{}
+\end{lpformulation}
+
+X + M * B >= minimum
+-X + M * (1 - B) >= minimum
+
+
 
 
 \unsure{REHACER TABLA 3 DEL PAPER}{}
