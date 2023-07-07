@@ -22,6 +22,12 @@ set n_set := 1 2 3 6 9 10 11 12 13 14 15 16 17 18 19 20 21 25 26 27 28 29 30 34 
 param h := 480;
 
 # Parameter
+# c : Maximum number of patients assigned to each physiotherapist
+# 4 patients per hour * 8 hours = 32
+param c := 32;
+
+
+# Parameter
 # W_set : Set of penalty weights coefficients
 set W_set := 1 2 3 4 5;
 

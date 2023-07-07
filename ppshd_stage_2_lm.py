@@ -72,7 +72,6 @@ model.check_S = pyo.BuildCheck(rule=S_rule)
 # S_set : set of physiotherapists
 model.S_set = pyo.RangeSet(model.S)
 
-
 # Parameter
 # h: Daily work minutes per each physiotherapist
 model.h = pyo.Param(within=pyo.NonNegativeIntegers)
@@ -81,6 +80,16 @@ def h_rule(model):
     return model.h >= 0
 
 model.check_h = pyo.BuildCheck(rule=h_rule)
+
+
+# Parameter
+# c: Maximum number of patients assigned to each physiotherapist
+model.c = pyo.Param(within=pyo.NonNegativeIntegers)
+
+def c_rule(model):
+    return model.c >= 0
+
+model.check_c = pyo.BuildCheck(rule=c_rule)
 
 
 # Set
@@ -202,37 +211,37 @@ model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 # Constraint. Eq (4): d_plus[1] : absolute time deviation
 import pyomo.core.util as pyo_util
 
-# import pyomo.core.expr.current as pyo_curr
+def d_plus_1_rule_ABS_OLD(model):
+    # IT DOES NOT RUN
+    import pyomo.core.expr.current as pyo_curr
+    return model.d_plus[1] == pyo_util.quicksum(pyo_curr.AbsExpression(model.G[j] - model.G_ave) for j in model.S_set)
 
-def d_plus_1_rule_OLD(model):
-    # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # return model.d_plus[1] == pyo_util.quicksum(pyo_curr.AbsExpression(model.G[j] - model.G_ave) for j in model.S_set)
-    return model.d_plus[1] == pyo_util.quicksum(model.G[j] - model.G_ave for j in model.S_set)
+# Parameter
+# M0 : Big M parameter, such that M0 > |G[j] - G_ave| , for all j in S_set
+model.M0 = pyo.Param(initialize=model.h + 1)
 
-# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI
-# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI
-# Big Mh: Maximum daily work minutes per each physiotherapist
-model.Mh = pyo.Param(initialize=model.h + 1)
-model.d_plus_1_bin =pyo.Var(model.S_set, within=pyo.Binary, initialize=0)
+# Variable
+# Binary variable
+model.B =pyo.Var(model.S_set, within=pyo.Binary, initialize=0)
 
-def d_plus_1_rule_a(model):
-    # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # return model.d_plus[1] == pyo_util.quicksum(pyo_curr.AbsExpression(model.G[j] - model.G_ave) for j in model.S_set)
-    model.d_plus_1_expr_aux = pyo.Expression(expr=0)
-    for j in model.S_set:
+# Constraint. Eq (13a)
+def d_plus_1_rule_a(model, j):
+    return (model.G[j] - model.G_ave) + model.M0 * model.B[j] >=0
 
-        if model.G[j] >= model.G_ave:
-            model.d_plus_1_aux += model.G[j] - model.G_ave
-        else:
-            model.d_plus_1_aux += model.G_ave - model.G[j]
-    
-    return model.d_plus[1] == model.d_plus_1_aux
+model.d_plus_1_costr_a = pyo.Constraint(model.S_set, rule=d_plus_1_rule_a)
 
-model.d_plus_1_costr_a = pyo.Constraint(rule=d_plus_1_rule_a)
-# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI
-# ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI    # ESTAS AQUI
+# Constraint. Eq (13b)
+def d_plus_1_rule_b(model, j):
+    return -(model.G[j] - model.G_ave) + model.M0 * (1 - model.B[j]) >=0
+
+model.d_plus_1_costr_b = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
+
+# Constraint. Eq (13c)
+def d_plus_1_rule_c(model):
+    return model.d_plus[1] == pyo.quicksum((1 - 2 * model.B[j]) * (model.G[j] - model.G_ave) for j in model.S_set)
+
+model.d_plus_1_costr_c = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
+
 
 # Constraint. Eq (5): G[j] : Total physiotherapy time assigned to jth physiotherapist
 def Gj_costr_rule(model, j):
@@ -250,12 +259,48 @@ model.G_ave_constr = pyo.Constraint(rule=G_ave_costr_rule)
 #   Absolute deviations from the goal of balanced
 #   distribution of patients in terms of time categories,
 #   respectively for short and long operations 
-def d_plus_23_rule(model, k):
-    # TODO : FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # FALTA VALOR ABSOLUTO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    return model.d_plus[k+1] == pyo_util.quicksum(model.NP[j,k] - model.NP_ave[k] for j in model.S_set)
+#
+# Parameter
+# M[K] : Big M parameter, such that M[K] > |N[j,K] - N_ave[K| , for all j in S_set, for all k in K_set
+def M_init(model):
+    for k in model.K_set:
+        yield (model.c + 1)
 
+model.M = pyo.Param(model.K_set, initialize=M_init)
+
+# Variable
+# Binary variable
+model.C =pyo.Var(model.S_set, model.K_set, within=pyo.Binary, initialize=0)
+
+
+# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
+# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
+# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
+
+# Constraint. Eq (13a)
+def d_plus_1_rule_a(model, j):
+    return (model.G[j] - model.G_ave) + model.M0 * model.B[j] >=0
+
+model.d_plus_1_costr_a = pyo.Constraint(model.S_set, rule=d_plus_1_rule_a)
+
+# Constraint. Eq (13b)
+def d_plus_1_rule_b(model, j):
+    return -(model.G[j] - model.G_ave) + model.M0 * (1 - model.B[j]) >=0
+
+model.d_plus_1_costr_b = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
+
+# Constraint. Eq (13c)
+def d_plus_1_rule_c(model):
+    return model.d_plus[1] == pyo.quicksum((1 - 2 * model.B[j]) * (model.G[j] - model.G_ave) for j in model.S_set)
+
+model.d_plus_1_costr_c = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
 model.d_plus_23_constr = pyo.Constraint(model.K_set, rule=d_plus_23_rule)
+
+# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
+# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
+# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
+
+
 
 # Constraint. Eq (8): NP[j,k] : 
 # Number of patients assigned to j-th physiotherapist from k-th time category
@@ -341,6 +386,7 @@ def model_info():
     model_info_str += str_aux
     
     model_info_str += "\nh = " + str(pyo.value(instance.h))
+    model_info_str += "\nc = " + str(pyo.value(instance.c))
 
     str_aux = "\nW_set = "
     for i in instance.W_set:
@@ -427,6 +473,8 @@ def print_results():
         print(str_aux)
         print("total_time_j[" + str(j) + "] = ", str(total_time_j))
         print("G[" + str(j) + "] = ", pyo.value(instance.G[j]))
+        print("B[" + str(j) + "] = ", pyo.value(instance.B[j]))
+        
         for k in instance.K_set:
             print("NP[" + str(j) + ", " + str(k) +"] = ", pyo.value(instance.NP[j,k]))
 
