@@ -228,32 +228,32 @@ model.B = pyo.Var(model.S_set, within=pyo.Binary, initialize=0)
 def d_plus_1_rule_a(model, j):
     return (model.G[j] - model.G_ave) + model.M0 * model.B[j] >=0
 
-model.d_plus_1_costr_a = pyo.Constraint(model.S_set, rule=d_plus_1_rule_a)
+model.d_plus_1_constr_a = pyo.Constraint(model.S_set, rule=d_plus_1_rule_a)
 
 # Constraint. Eq (13b)
 def d_plus_1_rule_b(model, j):
     return -(model.G[j] - model.G_ave) + model.M0 * (1 - model.B[j]) >=0
 
-model.d_plus_1_costr_b = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
+model.d_plus_1_constr_b = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
 
 # Constraint. Eq (13c)
 def d_plus_1_rule_c(model):
     return model.d_plus[1] == pyo.quicksum((1 - 2 * model.B[j]) * (model.G[j] - model.G_ave) for j in model.S_set)
 
-model.d_plus_1_costr_c = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
+model.d_plus_1_constr_c = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
 
 
 # Constraint. Eq (5): G[j] : Total physiotherapy time assigned to jth physiotherapist
-def Gj_costr_rule(model, j):
+def Gj_constr_rule(model, j):
     return model.G[j] == pyo_util.quicksum(model.t[i] * model.y[i,j] for i in model.n_set)
 
-model.Gj_constr = pyo.Constraint(model.S_set, rule=Gj_costr_rule)
+model.Gj_constr = pyo.Constraint(model.S_set, rule=Gj_constr_rule)
 
 # Constraint. Eq (6): G_ave : Average physiotherapy time assigned to physiotherapists
-def G_ave_costr_rule(model):
+def G_ave_constr_rule(model):
     return model.G_ave == pyo_util.quicksum(model.G[j]/model.S for j in model.S_set)
 
-model.G_ave_constr = pyo.Constraint(rule=G_ave_costr_rule)
+model.G_ave_constr = pyo.Constraint(rule=G_ave_constr_rule)
 
 # Constraint. Eq (7): d_plus[2], d_plus[3] : 
 #   Absolute deviations from the goal of balanced
@@ -275,24 +275,19 @@ model.C =pyo.Var(model.S_set, model.K_set, within=pyo.Binary, initialize=0)
 def d_plus_23_rule_a(model, j, k):
     return (model.NP[j,k] - model.NP_ave[k]) + model.M[k] * model.C[j,k] >=0
 
-model.d_plus_23_costr_a = pyo.Constraint(model.S_set, model.K_set, rule=d_plus_23_rule_a)
+model.d_plus_23_constr_a = pyo.Constraint(model.S_set, model.K_set, rule=d_plus_23_rule_a)
 
 # Constraint. Eq (14b)
 def d_plus_23_rule_b(model, j, k):
     return -(model.NP[j,k] - model.NP_ave[k]) + model.M[k] * (1 - model.C[j,k]) >=0
 
-model.d_plus_23_costr_b = pyo.Constraint(model.S_set, model.K_set, rule=d_plus_23_rule_b)
+model.d_plus_23_constr_b = pyo.Constraint(model.S_set, model.K_set, rule=d_plus_23_rule_b)
 
 # Constraint. Eq (14c)
 def d_plus_23_rule_c(model, k):
     return model.d_plus[k] == pyo.quicksum((1 - 2 * model.C[j,k]) * (model.NP[j,k] - model.NP_ave[k]) for j in model.S_set)
 
-model.d_plus_23_costr_c = pyo.Constraint(model.K_set, rule=d_plus_23_rule_c)
-
-# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
-# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
-# ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   # ESTAS AQUI   
-
+model.d_plus_23_constr_c = pyo.Constraint(model.K_set, rule=d_plus_23_rule_c)
 
 
 # Constraint. Eq (8): NP[j,k] : 
@@ -345,11 +340,20 @@ def daily_j_work_rule(model, j):
 model.daily_j_work_constr = pyo.Constraint(model.S_set, rule=daily_j_work_rule)
 
 
+#
+# Assign zero value to these variables
+def d_plus_123_zero_constr_rule(model, m):
+    return model.d_plus[m] == 0
+#
+model.d_plus_123_zero_constr = pyo.Constraint(pyo.RangeSet(3) , rule=d_plus_123_zero_constr_rule)
+
 
 # SOLVE ABSTRACT MODEL ------------------------------------
 
-opt = pyo.SolverFactory('glpk')
-# opt = pyo.SolverFactory('cplex')
+# Select a solver between: 'glpk', 'cplex'
+SOLVER = 'cplex'
+  
+opt = pyo.SolverFactory(SOLVER)    
 
 print("MODEL CONSTRUCTED = ", model.is_constructed())
 
@@ -359,6 +363,22 @@ print("MODEL CONSTRUCTED = ", model.is_constructed())
 # instance = model.create_instance(data)
 
 instance = model.create_instance(ppshd_cfg.LM_STAGE_2_DAT_FILE)
+
+# an attribute on an Abstract component cannot be accessed until the component 
+# has been fully constructed (converted to a Concrete component)
+if SOLVER == 'glpk':
+    # Deactivate constraints with absolute values
+    instance.d_plus_1_constr_a.deactivate()
+    instance.d_plus_1_constr_b.deactivate()
+    instance.d_plus_1_constr_c.deactivate()
+    #
+    instance.d_plus_23_constr_a.deactivate()
+    instance.d_plus_23_constr_b.deactivate()
+    instance.d_plus_23_constr_c.deactivate()
+else:
+    # Deactivate constraints with zero value
+    instance.d_plus_123_zero_constr.deactivate()
+
 
 print("INSTANCE CONSTRUCTED = ", instance.is_constructed())
 
@@ -444,7 +464,7 @@ def run_solver():
     # To avoid automatic loading of the solution from the results object to the model, use the load solutions=False argument to the call to solve().
     if (results.solver.status == SolverStatus.ok) and (results.solver.termination_condition == TerminationCondition.optimal):
         # Manually load the solution into the model
-        print("Tenemos solucion optima")
+        print("We have an optimal solution")
         instance.solutions.load_from(results)
     else:
         print("Solve failed.")
@@ -559,8 +579,8 @@ def print_paper_results():
         paper_obj += sum(instance.W[j] * d_plus_paper[j-1] for j in instance.S_set)
     print("PAPER.OBJ =", str(paper_obj))
 
-
-
-print_results()
-print_paper_results()
+from pyomo.opt import SolverStatus, TerminationCondition
+if (results.solver.status == SolverStatus.ok) and (results.solver.termination_condition == TerminationCondition.optimal):
+    print_results()
+    print_paper_results()
 
