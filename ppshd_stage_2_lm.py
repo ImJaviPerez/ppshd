@@ -22,7 +22,7 @@ model = pyo.AbstractModel(name="Personnel and Patient Scheduling. Stage II")
 model.N = pyo.Param(within=pyo.PositiveIntegers)
 
 # Parameter
-# T : Total daily capacity
+# T : Total daily capacity in minutes
 model.T = pyo.Param(within=pyo.PositiveIntegers)
 
 # N_set : set of patiens
@@ -53,7 +53,7 @@ model.check_n = pyo.BuildCheck(rule=n_rule)
 
 # Set
 # n_set : set of selected patients
-model.n_set = pyo.Set(within=pyo.NonNegativeIntegers)
+model.n_set = pyo.Set(within=pyo.PositiveIntegers)
 
 # # Parameter
 # # t[i] : Treatment time of i-th patient in minutes of selected patients
@@ -111,7 +111,7 @@ model.K_set = pyo.Set(within=pyo.PositiveIntegers)
 
 # Parameter
 # tc[i] : Time category for ith patients. (1 = short, 2 = long)
-# Create tc
+# Create tc for every patient in N_set
 def tc_init(model):
     dict_aux = {}
     for i in model.N_set:
@@ -128,7 +128,7 @@ model.tc = pyo.Param(model.N_set, initialize=tc_init)
 
 
 # Set
-# set_tc[k] : Set of patients indices with same value of k
+# set_tc[k] : Set of patients indices with same value of k in n_set
 def set_tc_k1_init(model):
     # set_aux = []
     for i in model.n_set:
@@ -136,7 +136,7 @@ def set_tc_k1_init(model):
             yield i
             #set_aux.append(i)
     # return set_aux
-
+#
 def set_tc_k2_init(model):
     # set_aux = []
     for i in model.n_set:
@@ -218,6 +218,7 @@ def d_plus_1_rule_ABS_OLD(model):
 
 # Parameter
 # M0 : Big M parameter, such that M0 > |G[j] - G_ave| , for all j in S_set
+# We know: h >= G[j] > |G[j] - G_ave| ==> h+1 >|G[j] - G_ave|
 model.M0 = pyo.Param(initialize=model.h + 1)
 
 # Variable
@@ -327,7 +328,7 @@ model.d_minus_4_rule_constr = pyo.Constraint(rule=d_minus_4_rule)
 # Constraint (11) : one_i_one_j
 # ensures that each patient is assigned to only one physiotherapist
 def one_i_one_j_rule(model, i):
-    return pyo_util.quicksum(model.y[i,j] for j in model.S_set) <= 1
+    return pyo_util.quicksum(model.y[i,j] for j in model.S_set) == 1
 
 model.one_i_one_j_rule_constr = pyo.Constraint(model.n_set, rule=one_i_one_j_rule)
 
@@ -381,6 +382,27 @@ else:
 
 
 print("INSTANCE CONSTRUCTED = ", instance.is_constructed())
+
+results = opt.solve(instance, load_solutions=False)  # solves and updates instance
+# @:tail
+
+
+def solver_termination_info():
+    """
+    Create string with solver termination info
+    """
+    solver_info_str = "\nn_set = " + instance.name
+
+    from pyomo.opt import SolverStatus, TerminationCondition
+    solver_info_str += "\nsolver.status = " + str(results.solver.status)
+    solver_info_str += "\nsolver.termination_condition = " + str(results.solver.termination_condition)
+
+    if (results.solver.status == SolverStatus.ok) and (results.solver.termination_condition == TerminationCondition.optimal):
+        solver_info_str += "\nWe have an optimal solution"
+    else:
+        solver_info_str += "\nSolve failed."
+    return solver_info_str
+
 
 def model_info():
     """
@@ -445,33 +467,6 @@ def model_info():
     
     return model_info_str
 
-print(model_info())
-
-results = opt.solve(instance, load_solutions=False)  # solves and updates instance
-# @:tail
-
-
-def run_solver():
-    """
-    Run solver and get solution
-    """
-    
-    # import pyomo.environ as pyo
-
-    print(instance.name, '\n')
-
-    from pyomo.opt import SolverStatus, TerminationCondition
-    # To avoid automatic loading of the solution from the results object to the model, use the load solutions=False argument to the call to solve().
-    if (results.solver.status == SolverStatus.ok) and (results.solver.termination_condition == TerminationCondition.optimal):
-        # Manually load the solution into the model
-        print("We have an optimal solution")
-        instance.solutions.load_from(results)
-    else:
-        print("Solve failed.")
-        # instance.solutions.load_from(results)
-
-
-run_solver()
 
 def print_results():
     print(instance.name)
@@ -579,8 +574,15 @@ def print_paper_results():
         paper_obj += sum(instance.W[j] * d_plus_paper[j-1] for j in instance.S_set)
     print("PAPER.OBJ =", str(paper_obj))
 
+
+print(model_info())
+print(solver_termination_info())
+
 from pyomo.opt import SolverStatus, TerminationCondition
+# To avoid automatic loading of the solution from the results object to the model, use the load solutions=False argument to the call to solve().
 if (results.solver.status == SolverStatus.ok) and (results.solver.termination_condition == TerminationCondition.optimal):
+    # Manually load the solution into the model
+    instance.solutions.load_from(results)
     print_results()
     print_paper_results()
 
