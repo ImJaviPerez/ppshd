@@ -339,7 +339,9 @@ Stage II: Assignment to Physiotherapists
 First we have to define next items:
 \begin{description}
 	\item[$B_j$] Binary variable.
-	\item[$M_0$] Big $M$ parameter, such that $M_0 > \lvert G_j - \overline{G} \rvert$  $\forall j \in \{1, \ldots, S\}$
+	\item[$M_0$] Big $M$ parameter, such that $M_0 > \lvert G_j - \overline{G} \rvert$  $\forall j \in \{1, \ldots, S\}$. We can select $M_0$ in this way: 
+	
+	$h \ge G_j \ge \lvert G_j - \overline{G} \rvert \Rightarrow M_0 = h+1 > \lvert G_j -  \overline{G} \rvert$
 \end{description}
 
 and we can change equation (\ref{eq:constr04}) with:
@@ -360,7 +362,9 @@ Secondly, \textbf{the equation (\ref{eq:constr07}) has the funtion \textit{absol
 First we have to define next items:
 \begin{description}
 	\item[$C_{jk}$] Binary variable, $\forall j \in \{1, \ldots, S\}, \forall k \in \{1, 2\}$.
-	\item[$M_k$] Big $M$ parameter, such that $M_k > \lvert N_{jk} - \overline{N}_k \rvert, \forall j \in \{1, \ldots, S\}, \forall k \in \{1, 2\}$
+	\item[$M_k$] Big $M$ parameter, such that $M_k > \lvert N_{jk} - \overline{N}_k \rvert, \forall j \in \{1, \ldots, S\}, \forall k \in \{1, 2\}$. We can select $M_k$ in this way: 
+	
+	$c \ge N_{jk} \ge \lvert N_{jk} - \overline{N}_k \rvert \Rightarrow M_k = c+1 > \lvert N_{jk} - \overline{N}_k \rvert$
 \end{description}
 
 and we can change equation (\ref{eq:constr07}) with:
