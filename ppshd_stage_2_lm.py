@@ -25,7 +25,7 @@ model.N = pyo.Param(within=pyo.PositiveIntegers)
 # T : Total daily capacity in minutes
 model.T = pyo.Param(within=pyo.PositiveIntegers)
 
-# N_set : set of patiens
+# N_set : set of patients
 model.N_set = pyo.RangeSet(model.N)
 
 # Parameter
@@ -218,7 +218,7 @@ def d_plus_1_rule_ABS_OLD(model):
 
 # Parameter
 # M0 : Big M parameter, such that M0 > |G[j] - G_ave| , for all j in S_set
-# We know: h >= G[j] > |G[j] - G_ave| ==> h+1 >|G[j] - G_ave|
+# We know: h >= G[j] >= |G[j] - G_ave| ==> h+1 > |G[j] - G_ave|
 model.M0 = pyo.Param(initialize=model.h + 1)
 
 # Variable
@@ -365,7 +365,9 @@ print("MODEL CONSTRUCTED = ", model.is_constructed())
 
 instance = model.create_instance(ppshd_cfg.LM_STAGE_2_DAT_FILE)
 
-# an attribute on an Abstract component cannot be accessed until the component 
+print("INSTANCE CONSTRUCTED = ", instance.is_constructed())
+
+# An attribute on an Abstract component cannot be accessed until the component 
 # has been fully constructed (converted to a Concrete component)
 if SOLVER == 'glpk':
     # Deactivate constraints with absolute values
@@ -381,9 +383,10 @@ else:
     instance.d_plus_123_zero_constr.deactivate()
 
 
-print("INSTANCE CONSTRUCTED = ", instance.is_constructed())
-
+# To avoid automatic loading of the solution from the results object to the model, 
+# use the load solutions=False argument to the call to solve().
 results = opt.solve(instance, load_solutions=False)  # solves and updates instance
+
 # @:tail
 
 
@@ -408,7 +411,8 @@ def model_info():
     """
     Create string with model data information including parameters and sets
     """
-    model_info_str = "\nn = " + str(pyo.value(instance.n))
+    model_info_str = "\nN = " + str(pyo.value(instance.N))
+    model_info_str += "\nn = " + str(pyo.value(instance.n))
     str_aux = "\nn_set = "
     for i in instance.n_set:
         str_aux += str(pyo.value(i)) + ", "
@@ -579,7 +583,8 @@ print(model_info())
 print(solver_termination_info())
 
 from pyomo.opt import SolverStatus, TerminationCondition
-# To avoid automatic loading of the solution from the results object to the model, use the load solutions=False argument to the call to solve().
+# To avoid automatic loading of the solution from the results object to the model, 
+# use the load solutions=False argument to the call to solve().
 if (results.solver.status == SolverStatus.ok) and (results.solver.termination_condition == TerminationCondition.optimal):
     # Manually load the solution into the model
     instance.solutions.load_from(results)
