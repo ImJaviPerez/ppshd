@@ -291,22 +291,22 @@ Stage II: Assignment to Physiotherapists
 \begin{lpformulation}
 	\lpobj[eq:obj2]{min}{W_1 d_1^+ + W_2 d_2^+ + W_3 d_3^+ + W_4 d_4^+ + W_5 d_4^-}
 	\lpeq[eq:constr04]{d_1^+ = \sum_{i=1}^{S} \lvert  G_j - \overline{G} \rvert}{}\footnotemark
-	\lpeq[eq:constr05]{G_j = \sum_{i=1}^{n} t_i y_{ij}}{j \in \{1, \ldots\, S\}}
+	\lpeq[eq:constr05]{G_j = \sum_{i=1}^{n} t_i y_{ij}}{j \in \{1, \ldots , S\}}
 	\lpeq[eq:constr06]{\overline{G} = \sum_{j=1}^{S} G_j/S}{}\footnotemark
 	\lpeq[eq:constr07]{d_{k+1}^{+} = \sum_{j=1}^{S} \lvert N_{jk} - \overline{N} \rvert ,}{k \in \{1,2\}}\footnotemark
 	\lpeq[eq:constr08]{N_{jk} = \sum_{j=1}^{S} \sum_{i | tc_i = k} y_{ij},}{k \in \{1,2\}}
 	\lpeq[eq:constr09]{\overline{N}_k = \sum_{j=1}^{S} N_{jk}/S,}{k \in \{1,2\}}
 	\lpnewsubeq[eq:constr10a]{d_4^+ = \sum_{i=1}^{n} \sum_{j=1}^{S} y_{ij} t_i}{}\footnotemark
 	\lpsubeq[eq:constr10b]{d_4^- = h S - d_4^+}{}
-	\lpeq[eq:constr11]{\sum_{j=1}^{S} y_{ij} = 1,}{i \in \{1, \ldots\, n\}}\footnotemark
-	\lpeq[eq:constr12] {G_j \le h,}{j \in \{1, \ldots\, S\}}
+	\lpeq[eq:constr11]{\sum_{j=1}^{S} y_{ij} = 1,}{i \in \{1, \ldots , n\}}\footnotemark
+	\lpeq[eq:constr12] {G_j \le h,}{j \in \{1, \ldots , S\}}
 \end{lpformulation}
 
 \footnotetext{The equation number (\ref{eq:constr04}) will be changed later in section \ref{sec:absolute}.}
 
 \footnotetext{The equation number (\ref{eq:constr06}) in the paper was:
 		\begin{lpformulation}
-			\lpeq*{\overline{G} = \sum_{i=1}^{n} G_j/S}{j \in \{1, \ldots, S\}}
+			\lpeq*{\overline{G} = \sum_{i=1}^{n} G_j/S}{j \in \{1, \ldots , S\}}
 		\end{lpformulation}
 		It  had a $n$ in the summation index and it is wrong.}
 
@@ -327,7 +327,7 @@ Stage II: Assignment to Physiotherapists
 
 \footnotetext{The equation number (\ref{eq:constr11}) in the paper was:
 	\begin{lpformulation}
-		\lpeq*{\sum_{j=1}^{S} y_{ij} \le 1}{j \in \{1, \ldots\, S\}}
+		\lpeq*{\sum_{j=1}^{S} y_{ij} \le 1}{j \in \{1, \ldots , S\}}
 	\end{lpformulation}
 	but it didn't include $i$ index.}
 
@@ -339,15 +339,15 @@ Stage II: Assignment to Physiotherapists
 First we have to define next items:
 \begin{description}
 	\item[$B_j$] Binary variable.
-	\item[$M_0$] Big $M$ parameter, such that $M_0 > \lvert G_j - \overline{G} \rvert$  $\forall j \in \{1, \ldots, S\}$. We can select $M_0$ in this way: 
+	\item[$M_0$] Big $M$ parameter, such that $M_0 > \lvert G_j - \overline{G} \rvert$  $\forall j \in \{1, \ldots , S\}$. We can select $M_0$ in this way: 
 	
 	$h \ge G_j \ge \lvert G_j - \overline{G} \rvert \Rightarrow M_0 = h+1 > \lvert G_j -  \overline{G} \rvert$
 \end{description}
 
 and we can change equation (\ref{eq:constr04}) with:
 \begin{lpformulation}
-	\lpnewsubeq[eq:constr04a]{(G_j - \overline{G}) + M_0 \cdot B_j \ge 0,}{j \in \{1, \ldots, S\};}
-	\lpsubeq[eq:constr04b]{-(G_j - \overline{G}) + M_0 \cdot (1 - B_j) \ge 0,}{j \in \{1, \ldots, S\};}
+	\lpnewsubeq[eq:constr04a]{(G_j - \overline{G}) + M_0 \cdot B_j \ge 0,}{j \in \{1, \ldots , S\};}
+	\lpsubeq[eq:constr04b]{-(G_j - \overline{G}) + M_0 \cdot (1 - B_j) \ge 0,}{j \in \{1, \ldots , S\};}
 	\lpsubeq[eq:constr04c]{d_{1}^{+} = \sum_{i=1}^{S} (1-2B_j) (G_j - \overline{G})}{}
 \end{lpformulation}
 We can see that:
@@ -361,16 +361,16 @@ Secondly, \textbf{the equation (\ref{eq:constr07}) has the funtion \textit{absol
 
 First we have to define next items:
 \begin{description}
-	\item[$C_{jk}$] Binary variable, $\forall j \in \{1, \ldots, S\}, \forall k \in \{1, 2\}$.
-	\item[$M_k$] Big $M$ parameter, such that $M_k > \lvert N_{jk} - \overline{N}_k \rvert, \forall j \in \{1, \ldots, S\}, \forall k \in \{1, 2\}$. We can select $M_k$ in this way: 
+	\item[$C_{jk}$] Binary variable, $\forall j \in \{1, \ldots , S\}, \forall k \in \{1, 2\}$.
+	\item[$M_k$] Big $M$ parameter, such that $M_k > \lvert N_{jk} - \overline{N}_k \rvert, \forall j \in \{1, \ldots , S\}, \forall k \in \{1, 2\}$. We can select $M_k$ in this way: 
 	
 	$c \ge N_{jk} \ge \lvert N_{jk} - \overline{N}_k \rvert \Rightarrow M_k = c+1 > \lvert N_{jk} - \overline{N}_k \rvert$
 \end{description}
 
 and we can change equation (\ref{eq:constr07}) with:
 \begin{lpformulation}
-	\lpnewsubeq[eq:constr07a]{(N_{jk} - \overline{N}_k) + M_k \cdot C_{jk} \ge 0,}{j \in \{1, \ldots, S\},  k \in \{1, 2\};}
-	\lpsubeq[eq:constr07b]{-(N_{jk} - \overline{N}_k) + M_k \cdot (1 - C_{jk}) \ge 0,}{j \in \{1, \ldots, S\},  k \in \{1, 2\};}
+	\lpnewsubeq[eq:constr07a]{(N_{jk} - \overline{N}_k) + M_k \cdot C_{jk} \ge 0,}{j \in \{1, \ldots , S\},  k \in \{1, 2\};}
+	\lpsubeq[eq:constr07b]{-(N_{jk} - \overline{N}_k) + M_k \cdot (1 - C_{jk}) \ge 0,}{j \in \{1, \ldots , S\},  k \in \{1, 2\};}
 	\lpsubeq[eq:constr07c]{d_{k+1}^{+} = \sum_{j=1}^{S} (1-2C_{jk}) (N_{jk} - \overline{N}_k)}{k \in \{1, 2\}}
 \end{lpformulation}
 We can see that:

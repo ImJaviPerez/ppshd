@@ -38,7 +38,6 @@ model.check_p = pyo.BuildCheck(model.N_set, rule=p_rule)
 # Parameter
 # t[i] : Treatment time of i-th patient in minutes
 model.t = pyo.Param(model.N_set, within=pyo.NonNegativeIntegers, initialize=0)
-
 # END : Data from ppshd_stage_1_lm ------------------------
 
 
@@ -104,7 +103,7 @@ model.W = pyo.Param(model.W_set, within=pyo.PositiveIntegers)
 
 # Set
 # K_set : Time category number.
-# 1, and 2 were assigned to symbolize 
+# 1 and 2 were assigned to symbolize 
 # short-term (0–39 min), long-term (>40 min) respectively
 long_term = 40
 model.K_set = pyo.Set(within=pyo.PositiveIntegers)
@@ -119,9 +118,9 @@ def tc_init(model):
         # the following does not work as expected in an abstract mode:
         # if model.t[i] < long_term:
         if pyo.value(model.t[i]) < long_term:
-            dict_aux[i] = 1 #.append(1)
+            dict_aux[i] = 1
         else:
-            dict_aux[i] = 2 #.append(2)
+            dict_aux[i] = 2
     return dict_aux
         
 model.tc = pyo.Param(model.N_set, initialize=tc_init)
@@ -159,7 +158,7 @@ model.G = pyo.Var(model.S_set, within=pyo.NonNegativeIntegers, initialize=0)
 # G_ave : Average physiotherapy time assigned to physiotherapists
 model.G_ave = pyo.Var(within=pyo.NonNegativeReals, initialize=0)
 #
-# d_range : number of d_plus variables to objetive function
+# d_plus_range : set of d_plus variables in the objetive function
 # TODO : NOT TO USE A NUMBER 4, USE A PARAMETER
 model.d_plus_range = pyo.RangeSet(4)
 # model.d_plus_range = pyo.Set(initialize=model.W_set[:-1])
@@ -184,15 +183,15 @@ model.d_plus = pyo.Var(model.d_plus_range, within=pyo.NonNegativeReals, initiali
 # loading physiotherapists below their daily capacitie
 model.d_minus_4 = pyo.Var(within=pyo.Reals, initialize=0)
 #
-# NP[jk] : Number of patients assigned to j-th physiotherapist from k-th time category
-model.NP = pyo.Var(model.S_set, model.K_set, within=pyo.Binary, initialize=0)
+# NP[j,k] : Number of patients assigned to j-th physiotherapist from k-th time category
+model.NP = pyo.Var(model.S_set, model.K_set, within=pyo.NonNegativeIntegers, initialize=0)
 #
 # NP_ave[k] : Average number of patients assigned from k-th time category.
 model.NP_ave = pyo.Var(model.K_set, within=pyo.NonNegativeReals, initialize=0)
 #
 #
 # Decision variable
-# y[ij] : 
+# y[i,j] : 
 #   1 if i-th patient is assigned to j-th physiotherapist
 #   0 otherwise
 model.y = pyo.Var(model.n_set, model.S_set, within=pyo.Binary, initialize=0)
@@ -203,8 +202,8 @@ model.y = pyo.Var(model.n_set, model.S_set, within=pyo.Binary, initialize=0)
 # OBJETIVE FUNCTION AND CONSTRICTIONS ---------------
 # Maximize number of patients priority and time
 def obj_rule(model):
-    # return model.W[1] * model.d_plus[1] + model.W[2] * model.d_plus[2] + model.W[3] * model.d_plus[3] + model.W[4] * model.d_plus[4] + model.W[5] * model.d_minus_4
-    return pyo.sum_product(model.W, model.d_plus, index=model.d_plus_range) + model.W[5] * model.d_minus_4
+    return model.W[1] * model.d_plus[1] + model.W[2] * model.d_plus[2] + model.W[3] * model.d_plus[3] + model.W[4] * model.d_plus[4] + model.W[5] * model.d_minus_4
+    # return pyo.sum_product(model.W, model.d_plus, index=model.d_plus_range) + model.W[5] * model.d_minus_4
 
 model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 
@@ -227,13 +226,13 @@ model.B = pyo.Var(model.S_set, within=pyo.Binary, initialize=0)
 
 # Constraint. Eq (13a)
 def d_plus_1_rule_a(model, j):
-    return (model.G[j] - model.G_ave) + model.M0 * model.B[j] >=0
+    return (model.G[j] - model.G_ave) + model.M0 * model.B[j] >= 0
 
 model.d_plus_1_constr_a = pyo.Constraint(model.S_set, rule=d_plus_1_rule_a)
 
 # Constraint. Eq (13b)
 def d_plus_1_rule_b(model, j):
-    return -(model.G[j] - model.G_ave) + model.M0 * (1 - model.B[j]) >=0
+    return -(model.G[j] - model.G_ave) + model.M0 * (1 - model.B[j]) >= 0
 
 model.d_plus_1_constr_b = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
 
@@ -241,7 +240,7 @@ model.d_plus_1_constr_b = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
 def d_plus_1_rule_c(model):
     return model.d_plus[1] == pyo.quicksum((1 - 2 * model.B[j]) * (model.G[j] - model.G_ave) for j in model.S_set)
 
-model.d_plus_1_constr_c = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
+model.d_plus_1_constr_c = pyo.Constraint(rule=d_plus_1_rule_c)
 
 
 # Constraint. Eq (5): G[j] : Total physiotherapy time assigned to jth physiotherapist
@@ -252,7 +251,7 @@ model.Gj_constr = pyo.Constraint(model.S_set, rule=Gj_constr_rule)
 
 # Constraint. Eq (6): G_ave : Average physiotherapy time assigned to physiotherapists
 def G_ave_constr_rule(model):
-    return model.G_ave == pyo_util.quicksum(model.G[j]/model.S for j in model.S_set)
+    return model.G_ave == pyo_util.quicksum(model.G[j] for j in model.S_set)/model.S
 
 model.G_ave_constr = pyo.Constraint(rule=G_ave_constr_rule)
 
@@ -294,9 +293,9 @@ model.d_plus_23_constr_c = pyo.Constraint(model.K_set, rule=d_plus_23_rule_c)
 # Constraint. Eq (8): NP[j,k] : 
 # Number of patients assigned to j-th physiotherapist from k-th time category
 def NP_rule(model, k, j):
-    if pyo.value(k == 1):
+    if pyo.value(k)  == 1:
         return model.NP[j,k] == pyo_util.quicksum(model.y[i,j] for i in model.set_tc_1)
-    elif pyo.value(k == 2):
+    elif pyo.value(k) == 2:
         return model.NP[j,k] == pyo_util.quicksum(model.y[i,j] for i in model.set_tc_2)
     else:
         return pyo.Constraint.Skip
@@ -306,7 +305,7 @@ model.NP_constr = pyo.Constraint(model.K_set, model.S_set, rule=NP_rule)
 # Constraint. Eq (9): NP_ave[k] : 
 # Average number of patients assigned from k-th time category.
 def NP_ave_rule(model, k):
-    return model.NP_ave[k] == pyo_util.quicksum(model.NP[j,k]/model.S for j in model.S_set)
+    return model.NP_ave[k] == pyo_util.quicksum(model.NP[j,k] for j in model.S_set)/model.S
 
 model.NP_ave_costr = pyo.Constraint(model.K_set, rule=NP_ave_rule)
 
@@ -394,7 +393,7 @@ def solver_termination_info():
     """
     Create string with solver termination info
     """
-    solver_info_str = "\nn_set = " + instance.name
+    solver_info_str = "\ninstance.name = " + instance.name
 
     from pyomo.opt import SolverStatus, TerminationCondition
     solver_info_str += "\nsolver.status = " + str(results.solver.status)
