@@ -342,7 +342,7 @@ Stage II: Assignment to Physiotherapists
 
 \section{Change absolute value function}\label{sec:absolute}
 
-\textbf{The equation (\ref{eq:constr04}) has the funtion \textit{absolute} value} which is not linear. We have to change that equation with some linear constraints.
+\textbf{The equation (\ref{eq:constr04}) has the funtion \textit{absolute} value} which is not linear. We should try to change that equation with some linear constraints\footnote{We can see information about how to do this at \url{http://lpsolve.sourceforge.net/5.1/absolute.htm}  or at \url{https://orinanobworld.blogspot.com/2017/02/another-absolute-value-question.html} or at \url{https://orinanobworld.blogspot.com/2012/07/modeling-absolute-values.html}}. 
 
 First we have to define next items:
 \begin{description}
@@ -358,14 +358,16 @@ and we can change equation (\ref{eq:constr04}) with:
 	\lpsubeq[eq:constr04b]{-(G_j - \overline{G}) + M_0 \cdot (1 - B_j) \ge 0,}{j \in \{1, \ldots , S\};}
 	\lpsubeq[eq:constr04c]{d_{1}^{+} = \sum_{j=1}^{S} (1-2B_j) (G_j - \overline{G})}{}
 \end{lpformulation}
+But equation (\ref{eq:constr04c}) is not linear.
+
 We can see that:
 \begin{itemize}
-	\item When $(G_j - \overline{G}) \ge 0 \Longrightarrow B_j = 0$
-	\item When $(G_j - \overline{G}) \le 0 \Longrightarrow B_j = 1$
+	\item if $G_j \ge \overline{G} \Longrightarrow (G_j - \overline{G}) \ge 0 \Longrightarrow B_j = 0$
+	\item If $G_j < \overline{G} \Longrightarrow (G_j - \overline{G}) < 0 \Longrightarrow B_j = 1$
 \end{itemize}
 
 
-Secondly, \textbf{the equation (\ref{eq:constr07}) has the funtion \textit{absolute} value} which is not linear. We have to change that equation with some linear constraints.
+Secondly, \textbf{the equation (\ref{eq:constr07}) has the funtion \textit{absolute} value} which is not linear. We should try to change that equation with some linear constraints.
 
 First we have to define next items:
 \begin{description}
@@ -381,10 +383,12 @@ and we can change equation (\ref{eq:constr07}) with:
 	\lpsubeq[eq:constr07b]{-(N_{jk} - \overline{N}_k) + M_k \cdot (1 - C_{jk}) \ge 0,}{j \in \{1, \ldots , S\},  k \in \{1, 2\};}
 	\lpsubeq[eq:constr07c]{d_{k+1}^{+} = \sum_{j=1}^{S} (1-2C_{jk}) (N_{jk} - \overline{N}_k)}{k \in \{1, 2\}}
 \end{lpformulation}
+But equation (\ref{eq:constr07c}) is not linear.
+
 We can see that:
 \begin{itemize}
-	\item When $(N_{jk} - \overline{N}_k) \ge 0 \Longrightarrow C_{jk} = 0$
-	\item When $(N_{jk} - \overline{N}_k) \le 0 \Longrightarrow C_{jk} = 1$
+	\item If $N_{jk} \ge \overline{N}_k \Longrightarrow (N_{jk} - \overline{N}_k) \ge 0 \Longrightarrow C_{jk} = 0$
+	\item If $N_{jk} < \overline{N}_k \Longrightarrow (N_{jk} - \overline{N}_k) < 0 \Longrightarrow C_{jk} = 1$
 \end{itemize}
 
 

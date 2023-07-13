@@ -213,8 +213,7 @@ def d_plus_1_rule_ABS_OLD(model):
 # Parameter
 # M0 : Big M parameter, such that M0 > |G[j] - G_ave| , for all j in S_set
 # We know: h >= G[j] >= |G[j] - G_ave| ==> h+1 > |G[j] - G_ave|
-# TODO : ERASE "100 *" 
-model.M0 = pyo.Param(initialize=100 * model.h + 1)
+model.M0 = pyo.Param(initialize=model.h + 1)
 
 # Variable
 # Binary variable
@@ -263,7 +262,6 @@ model.G_ave_constr = pyo.Constraint(rule=G_ave_constr_rule)
 # Parameter
 # M[K] : Big M parameter, such that M[K] > |N[j,K] - N_ave[K| , for all j in S_set, for all k in K_set
 def M_init(model):
-    # TODO : ERASE "100 *" 
     return (model.c + 1)
 
 model.M = pyo.Param(model.K_set, initialize=M_init)
@@ -350,14 +348,6 @@ def daily_j_work_rule(model, j):
 model.daily_j_work_constr = pyo.Constraint(model.S_set, rule=daily_j_work_rule)
 
 
-#
-# Assign zero value to these variables
-def d_plus_123_zero_rule(model, m):
-    return model.d_plus[m] == 0
-#
-model.d_plus_123_zero_constr = pyo.Constraint(pyo.RangeSet(3) , rule=d_plus_123_zero_rule)
-
-
 # SOLVE ABSTRACT MODEL ------------------------------------
 
 # Select a solver between: 'glpk', 'cplex'
@@ -378,21 +368,11 @@ print("INSTANCE CONSTRUCTED = ", instance.is_constructed())
 
 # An attribute on an Abstract component cannot be accessed until the component 
 # has been fully constructed (converted to a Concrete component)
-# TODO : ERASE THIS CONDITION PLEASE!!!!! ---------------------------
+# TODO : FIND A SOLVER THAT CAN SOLVE MINLP AND ERASE THIS CONDITION PLEASE!!!!! ---------------------------
 if (SOLVER == 'glpk' or SOLVER == 'cplex'):
-    # Deactivate constraints with absolute values
-    # instance.d_plus_1_constr_a.deactivate()
-    # instance.d_plus_1_constr_b.deactivate()
+    # Deactivate non linear constraints
     instance.d_plus_1_constr_c.deactivate()
-    #
-    # instance.d_plus_23_constr_a.deactivate()
-    # instance.d_plus_23_constr_b.deactivate()
     instance.d_plus_23_constr_c.deactivate()
-else:
-    pass
-# Deactivate constraints with zero value
-instance.d_plus_123_zero_constr.deactivate()
-# -------------------------------------------------------------------
 
 
 # To avoid automatic loading of the solution from the results object to the model, 
@@ -501,7 +481,6 @@ def print_constraints():
     instance.d_minus_4_rule_constr.pprint()
     instance.one_i_one_j_rule_constr.pprint()
     instance.daily_j_work_constr.pprint()
-    instance.d_plus_123_zero_constr.pprint()
 
 def print_results():
     print(instance.name)
