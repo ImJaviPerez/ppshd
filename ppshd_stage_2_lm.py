@@ -37,17 +37,15 @@ model.check_p = pyo.BuildCheck(model.N_set, rule=p_rule)
 
 # Parameter
 # t[i] : Treatment time of i-th patient in minutes
-model.t = pyo.Param(model.N_set, within=pyo.NonNegativeIntegers, initialize=0)
+model.t = pyo.Param(model.N_set, within=pyo.PositiveIntegers)
 # END : Data from ppshd_stage_1_lm ------------------------
 
 
 # Parameter
 # n: Number of selected patients
 model.n = pyo.Param(within=pyo.PositiveIntegers)
-
 def n_rule(model):
     return model.n >= 1
-
 model.check_n = pyo.BuildCheck(rule=n_rule)
 
 # Set
@@ -74,20 +72,16 @@ model.S_set = pyo.RangeSet(model.S)
 # Parameter
 # h: Daily work minutes per each physiotherapist
 model.h = pyo.Param(within=pyo.NonNegativeIntegers)
-
 def h_rule(model):
-    return model.h >= 0
-
+    return model.h > 0
 model.check_h = pyo.BuildCheck(rule=h_rule)
 
 
 # Parameter
 # c: Maximum number of patients assigned to each physiotherapist
-model.c = pyo.Param(within=pyo.NonNegativeIntegers)
-
+model.c = pyo.Param(within=pyo.PositiveIntegers)
 def c_rule(model):
-    return model.c >= 0
-
+    return model.c > 0
 model.check_c = pyo.BuildCheck(rule=c_rule)
 
 
@@ -105,7 +99,7 @@ model.W = pyo.Param(model.W_set, within=pyo.PositiveIntegers)
 # K_set : Time category number.
 # 1 and 2 were assigned to symbolize 
 # short-term (0–39 min), long-term (>40 min) respectively
-long_term = 40
+LONG_TERM = 40
 model.K_set = pyo.Set(within=pyo.PositiveIntegers)
 
 # Parameter
@@ -114,10 +108,11 @@ model.K_set = pyo.Set(within=pyo.PositiveIntegers)
 def tc_init(model):
     dict_aux = {}
     for i in model.N_set:
+        # https://pyomo.readthedocs.io/en/stable/pyomo_modeling_components/Expressions.html
         # Because model elements result in expressions, not values, 
         # the following does not work as expected in an abstract mode:
-        # if model.t[i] < long_term:
-        if pyo.value(model.t[i]) < long_term:
+        # if model.t[i] < LONG_TERM:
+        if pyo.value(model.t[i]) < LONG_TERM:
             dict_aux[i] = 1
         else:
             dict_aux[i] = 2
@@ -153,10 +148,10 @@ model.set_tc_2 = pyo.Set(initialize=set_tc_k2_init)
 
 # variables
 # G[j] : Total physiotherapy time assigned to j-th physiotherapist
-model.G = pyo.Var(model.S_set, within=pyo.NonNegativeIntegers, initialize=0)
+model.G = pyo.Var(model.S_set, within=pyo.NonNegativeIntegers)
 #
 # G_ave : Average physiotherapy time assigned to physiotherapists
-model.G_ave = pyo.Var(within=pyo.NonNegativeReals, initialize=0)
+model.G_ave = pyo.Var(within=pyo.NonNegativeReals)
 #
 # d_plus_range : set of d_plus variables in the objetive function
 # TODO : NOT TO USE A NUMBER 4, USE A PARAMETER
@@ -177,17 +172,17 @@ model.d_plus_range = pyo.RangeSet(4)
 # 
 #   d_plus[4] : TODO : GIVE AN EXPLANATION TO THIS VARIABLE. I DONT KNOW WHAT IT IS 
 #       ?? is the deviation terms related to loading physiotherapists above their daily capacities?
-model.d_plus = pyo.Var(model.d_plus_range, within=pyo.NonNegativeReals, initialize=0)
+model.d_plus = pyo.Var(model.d_plus_range, within=pyo.NonNegativeReals)
 #
 # d_minus_4 : is the deviation terms related to
 # loading physiotherapists below their daily capacitie
-model.d_minus_4 = pyo.Var(within=pyo.Reals, initialize=0)
+model.d_minus_4 = pyo.Var(within=pyo.Reals)
 #
 # NP[j,k] : Number of patients assigned to j-th physiotherapist from k-th time category
-model.NP = pyo.Var(model.S_set, model.K_set, within=pyo.NonNegativeIntegers, initialize=0)
+model.NP = pyo.Var(model.S_set, model.K_set, within=pyo.NonNegativeIntegers)
 #
 # NP_ave[k] : Average number of patients assigned from k-th time category.
-model.NP_ave = pyo.Var(model.K_set, within=pyo.NonNegativeReals, initialize=0)
+model.NP_ave = pyo.Var(model.K_set, within=pyo.NonNegativeReals)
 #
 #
 # Decision variable
@@ -202,8 +197,8 @@ model.y = pyo.Var(model.n_set, model.S_set, within=pyo.Binary, initialize=0)
 # OBJETIVE FUNCTION AND CONSTRICTIONS ---------------
 # Maximize number of patients priority and time
 def obj_rule(model):
-    return model.W[1] * model.d_plus[1] + model.W[2] * model.d_plus[2] + model.W[3] * model.d_plus[3] + model.W[4] * model.d_plus[4] + model.W[5] * model.d_minus_4
-    # return pyo.sum_product(model.W, model.d_plus, index=model.d_plus_range) + model.W[5] * model.d_minus_4
+    # return model.W[1] * model.d_plus[1] + model.W[2] * model.d_plus[2] + model.W[3] * model.d_plus[3] + model.W[4] * model.d_plus[4] + model.W[5] * model.d_minus_4
+    return pyo.sum_product(model.W, model.d_plus, index=model.d_plus_range) + model.W[5] * model.d_minus_4
 
 model.OBJ= pyo.Objective(rule=obj_rule, sense=pyo.minimize)
 
@@ -218,7 +213,8 @@ def d_plus_1_rule_ABS_OLD(model):
 # Parameter
 # M0 : Big M parameter, such that M0 > |G[j] - G_ave| , for all j in S_set
 # We know: h >= G[j] >= |G[j] - G_ave| ==> h+1 > |G[j] - G_ave|
-model.M0 = pyo.Param(initialize=model.h + 1)
+# TODO : ERASE "100 *" 
+model.M0 = pyo.Param(initialize=100 * model.h + 1)
 
 # Variable
 # Binary variable
@@ -238,6 +234,10 @@ model.d_plus_1_constr_b = pyo.Constraint(model.S_set, rule=d_plus_1_rule_b)
 
 # Constraint. Eq (13c)
 def d_plus_1_rule_c(model):
+    # d_plus_1 = 0
+    # for j in model.S_set:
+    #     d_plus_1 += (1 - 2 * model.B[j]) * (model.G[j] - model.G_ave)
+    # return model.d_plus[1] == d_plus_1
     return model.d_plus[1] == pyo.quicksum((1 - 2 * model.B[j]) * (model.G[j] - model.G_ave) for j in model.S_set)
 
 model.d_plus_1_constr_c = pyo.Constraint(rule=d_plus_1_rule_c)
@@ -263,6 +263,7 @@ model.G_ave_constr = pyo.Constraint(rule=G_ave_constr_rule)
 # Parameter
 # M[K] : Big M parameter, such that M[K] > |N[j,K] - N_ave[K| , for all j in S_set, for all k in K_set
 def M_init(model):
+    # TODO : ERASE "100 *" 
     return (model.c + 1)
 
 model.M = pyo.Param(model.K_set, initialize=M_init)
@@ -273,13 +274,13 @@ model.C =pyo.Var(model.S_set, model.K_set, within=pyo.Binary, initialize=0)
 
 # Constraint. Eq (14a)
 def d_plus_23_rule_a(model, j, k):
-    return (model.NP[j,k] - model.NP_ave[k]) + model.M[k] * model.C[j,k] >=0
+    return (model.NP[j,k] - model.NP_ave[k]) + model.M[k] * model.C[j,k] >= 0
 
 model.d_plus_23_constr_a = pyo.Constraint(model.S_set, model.K_set, rule=d_plus_23_rule_a)
 
 # Constraint. Eq (14b)
 def d_plus_23_rule_b(model, j, k):
-    return -(model.NP[j,k] - model.NP_ave[k]) + model.M[k] * (1 - model.C[j,k]) >=0
+    return -(model.NP[j,k] - model.NP_ave[k]) + model.M[k] * (1 - model.C[j,k]) >= 0
 
 model.d_plus_23_constr_b = pyo.Constraint(model.S_set, model.K_set, rule=d_plus_23_rule_b)
 
@@ -290,17 +291,23 @@ def d_plus_23_rule_c(model, k):
 model.d_plus_23_constr_c = pyo.Constraint(model.K_set, rule=d_plus_23_rule_c)
 
 
-# Constraint. Eq (8): NP[j,k] : 
+# Constraint. Eq (8a): NP[j,k] : 
 # Number of patients assigned to j-th physiotherapist from k-th time category
-def NP_rule(model, k, j):
-    if pyo.value(k)  == 1:
+def NP_rule(model, j, k):
+    if pyo.value(k) == 1:
         return model.NP[j,k] == pyo_util.quicksum(model.y[i,j] for i in model.set_tc_1)
     elif pyo.value(k) == 2:
         return model.NP[j,k] == pyo_util.quicksum(model.y[i,j] for i in model.set_tc_2)
     else:
         return pyo.Constraint.Skip
 
-model.NP_constr = pyo.Constraint(model.K_set, model.S_set, rule=NP_rule)
+model.NP_constr = pyo.Constraint(model.S_set, model.K_set, rule=NP_rule)
+
+# Constraint. Eq (8b): NP[j,k] : 
+# Maximum number of patients assigned to j-th physiotherapist
+def NP_max_rule(model,j):
+    return (0, pyo_util.quicksum(model.NP[j,k] for k in model.K_set), pyo.value(model.c))
+model.NP_max_constr = pyo.Constraint(model.S_set, rule=NP_max_rule)
 
 # Constraint. Eq (9): NP_ave[k] : 
 # Average number of patients assigned from k-th time category.
@@ -319,7 +326,8 @@ model.d_plus_4_rule_constr = pyo.Constraint(rule=d_plus_4_rule)
 # Constraint Eq (10b) : d_minus_4
 # is the deviation terms related to loading physiotherapists below their daily capacities
 def d_minus_4_rule(model):
-    return model.d_minus_4 == model.h * model.S - model.d_plus[4]
+    # return model.d_minus_4 == model.h * model.S - model.d_plus[4]
+    return model.d_minus_4 == model.T - model.d_plus[4]
 
 model.d_minus_4_rule_constr = pyo.Constraint(rule=d_minus_4_rule)
 
@@ -335,23 +343,25 @@ model.one_i_one_j_rule_constr = pyo.Constraint(model.n_set, rule=one_i_one_j_rul
 # Total physiotherapy time assigned to j-th physiotherapist less or equal than 
 # daily work minutes per each physiotherapist
 def daily_j_work_rule(model, j):
-    return model.G[j] <= model.h
+    # 0 <= model.G[j] <= model.h
+    return (0, model.G[j], pyo.value(model.h))
+    # return model.G[j] <= model.h
 
 model.daily_j_work_constr = pyo.Constraint(model.S_set, rule=daily_j_work_rule)
 
 
 #
 # Assign zero value to these variables
-def d_plus_123_zero_constr_rule(model, m):
+def d_plus_123_zero_rule(model, m):
     return model.d_plus[m] == 0
 #
-model.d_plus_123_zero_constr = pyo.Constraint(pyo.RangeSet(3) , rule=d_plus_123_zero_constr_rule)
+model.d_plus_123_zero_constr = pyo.Constraint(pyo.RangeSet(3) , rule=d_plus_123_zero_rule)
 
 
 # SOLVE ABSTRACT MODEL ------------------------------------
 
 # Select a solver between: 'glpk', 'cplex'
-SOLVER = 'cplex'
+SOLVER = 'glpk'
   
 opt = pyo.SolverFactory(SOLVER)    
 
@@ -368,18 +378,21 @@ print("INSTANCE CONSTRUCTED = ", instance.is_constructed())
 
 # An attribute on an Abstract component cannot be accessed until the component 
 # has been fully constructed (converted to a Concrete component)
-if SOLVER == 'glpk':
+# TODO : ERASE THIS CONDITION PLEASE!!!!! ---------------------------
+if (SOLVER == 'glpk' or SOLVER == 'cplex'):
     # Deactivate constraints with absolute values
-    instance.d_plus_1_constr_a.deactivate()
-    instance.d_plus_1_constr_b.deactivate()
+    # instance.d_plus_1_constr_a.deactivate()
+    # instance.d_plus_1_constr_b.deactivate()
     instance.d_plus_1_constr_c.deactivate()
     #
-    instance.d_plus_23_constr_a.deactivate()
-    instance.d_plus_23_constr_b.deactivate()
+    # instance.d_plus_23_constr_a.deactivate()
+    # instance.d_plus_23_constr_b.deactivate()
     instance.d_plus_23_constr_c.deactivate()
 else:
-    # Deactivate constraints with zero value
-    instance.d_plus_123_zero_constr.deactivate()
+    pass
+# Deactivate constraints with zero value
+instance.d_plus_123_zero_constr.deactivate()
+# -------------------------------------------------------------------
 
 
 # To avoid automatic loading of the solution from the results object to the model, 
@@ -471,6 +484,25 @@ def model_info():
     return model_info_str
 
 
+def print_constraints():
+    instance.OBJ.pprint()
+    instance.d_plus_1_constr_a.pprint()
+    instance.d_plus_1_constr_b.pprint()
+    instance.d_plus_1_constr_c.pprint()
+    instance.Gj_constr.pprint()
+    instance.G_ave_constr.pprint()
+    instance.d_plus_23_constr_a.pprint()
+    instance.d_plus_23_constr_b.pprint()
+    instance.d_plus_23_constr_c.pprint()
+    instance.NP_constr.pprint()
+    instance.NP_max_constr.pprint()
+    instance.NP_ave_costr.pprint()
+    instance.d_plus_4_rule_constr.pprint()
+    instance.d_minus_4_rule_constr.pprint()
+    instance.one_i_one_j_rule_constr.pprint()
+    instance.daily_j_work_constr.pprint()
+    instance.d_plus_123_zero_constr.pprint()
+
 def print_results():
     print(instance.name)
 
@@ -484,18 +516,36 @@ def print_results():
         total_time_j = 0
         short_time_j = 0
         long_time_j = 0
-        for i in instance.n_set:
+        patients_tc1 = ""
+        patients_tc2 = ""
+        # for i in instance.n_set:
+        for i in (instance.set_tc_1):
             if pyo.value(instance.y[i,j]) != 0:
                 str_aux += str(i) + ", "
                 total_time_j += instance.t[i]
+                short_time_j += instance.t[i]
+                patients_tc1 += str(i) + ", "
+        for i in (instance.set_tc_2):
+            if pyo.value(instance.y[i,j]) != 0:
+                str_aux += str(i) + ", "
+                total_time_j += instance.t[i]
+                long_time_j += instance.t[i]
+                patients_tc2 += str(i) + ", "
+        
         print(str_aux)
+
+        for k in instance.K_set:
+            print("NP[" + str(j) + "," + str(k) + "] = ", pyo.value(instance.NP[j,k]))
+            print("C[" + str(j) + "," + str(k) + "] = ", pyo.value(instance.C[j,k]))
+
+        print("patients_tc1 =", patients_tc1)
+        print("patients_tc2 =", patients_tc2)
         print("total_time_j[" + str(j) + "] = ", str(total_time_j))
+        print("short_time_j[" + str(j) + "] = ", str(short_time_j))
+        print("long_time_j[" + str(j) + "] = ", str(long_time_j))
         print("G[" + str(j) + "] = ", pyo.value(instance.G[j]))
         print("B[" + str(j) + "] = ", pyo.value(instance.B[j]))
         
-        for k in instance.K_set:
-            print("NP[" + str(j) + ", " + str(k) +"] = ", pyo.value(instance.NP[j,k]))
-
 
     print("RESULTS WITH SOLVER --------------------")
     print("model.OBJ =", pyo.value(instance.OBJ))
@@ -534,7 +584,7 @@ def print_paper_results():
     for j in instance.S_set:
         print("PAPER. phisioterapist", j)
         for i in patients_paper[j-1]:
-            if instance.t[i] < long_term:
+            if instance.t[i] < LONG_TERM:
                 NP_paper[j-1, 1-1] +=1
             else:
                 NP_paper[j-1, 2-1] +=1
@@ -578,7 +628,11 @@ def print_paper_results():
     print("PAPER.OBJ =", str(paper_obj))
 
 
+
 print(model_info())
+
+print_constraints()
+
 print(solver_termination_info())
 
 from pyomo.opt import SolverStatus, TerminationCondition
@@ -588,5 +642,5 @@ if (results.solver.status == SolverStatus.ok) and (results.solver.termination_co
     # Manually load the solution into the model
     instance.solutions.load_from(results)
     print_results()
-    print_paper_results()
+    # print_paper_results()
 

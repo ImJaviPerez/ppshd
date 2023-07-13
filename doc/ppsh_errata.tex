@@ -255,26 +255,33 @@ We show here paper proposed model and definitions. But we think that there are s
 
 The notation used in this study is as follows:
 \begin{description}
-	\item[$N$] Number of patients
-	\item[$n$] Number of selected patients
-	\item[$S$] Number of physiotherapists
-	\item[$m$] Number of time intervals
-	\item[$c$] Maximum number of patients assigned to each physiotherapist
-	\item[$i$] Patient number
-	\item[$j$] Physiotherapist number
-	\item[$l$] Time intervals number
-	\item[$k$] Time category number
-	\item[$h$] Daily work minutes per each physiotherapist
-	\item[$t_i$] Treatment time of $i$th patient
-	\item[$T$] Total daily capacity
-	\item[$p_i$] Weight of priority level for $i$th patient
-	\item[$G_j$] Total physiotherapy time assigned to $j$th physiotherapist.
-	\item[$\overline{G}$] Average physiotherapy time assigned to physiotherapists.
-	\item[$N_{jk}$] Number of patients assigned to $j$th physiotherapist from $k$th time category.
-	\item[$\overline{N}_k$] Average number of patients assigned from $k$th time category.
-	\item[$tc_i$] Time category for ith patients. (1 = short, 2 = long)
-	\item[$TI_l$] Total physiotherapy time assigned to $l$th time intervals
-	\item[$\overline{Tl}$] Average physiotherapy time assigned to time intervals
+	\item[$N$] Number of patients. $N \in \mathbb{N} > 0$
+	\item[$n$] Number of selected patients. $n \in \mathbb{N} > 0$
+	\item[$S$] Number of physiotherapists. $S \in \mathbb{N} > 0$
+	\item[$m$] Number of time intervals. $m \in \mathbb{N} > 0$
+	\item[$c$] Maximum number of patients assigned to each physiotherapist. $c \in \mathbb{N} > 0$
+	\item[$i$] Patient number index. $i \in N$ or $i \in n$
+	\item[$j$] Physiotherapist number. $j \in S$
+	\item[$l$] Time intervals number. $l \in m$
+	\item[$k$] Time category number. $k \in  \mathbb{N} > 0$
+	\item[$h$] Daily work minutes per each physiotherapist. $h \in  \mathbb{N} \ge 0$
+	\item[$t_i$] Treatment time of $i$th patient. $t_i \in  \mathbb{N} > 0$
+	\item[$T$] Total daily capacity. $T \in  \mathbb{N} > 0$
+	\item[$p_i$] Weight of priority level for $i$th patient. $p_i \in  \mathbb{N} > 0$
+	\item[$G_j$] Total physiotherapy time assigned to $j$th physiotherapist. $G_i \in  \mathbb{N} \ge 0$
+	\item[$\overline{G}$] Average physiotherapy time assigned to physiotherapists. $\overline{G} \in  \mathbb{R} \ge 0$
+	\item[$N_{jk}$] Number of patients assigned to $j$th physiotherapist from $k$th time category. $N_{jk} \in  \mathbb{N} \ge 0$
+	\item[$\overline{N}_k$] Average number of patients assigned from $k$th time category. $\overline{N}_k \in  \mathbb{R} \ge 0$
+	\item[$tc_i$] Time category for ith patients. (1 = short, 2 = long)$G_i \in \{1, 2\}$
+	\item[$TI_l$] Total physiotherapy time assigned to $l$th time intervals. $TI_l \in  \mathbb{N} \ge 0$
+	\item[$\overline{TI}$] Average physiotherapy time assigned to time intervals. $\overline{TI} \in  \mathbb{R} \ge 0$
+\end{description}
+
+The variables used in this study are:
+\begin{description}
+	\item[$x_i$] 1 if $i$th patient is selected; 0 otherwise.
+	\item[$y_{ij}$] 1 if $i$th patient is assigned to $j$th physiotherapist; 0 otherwise.
+	\item[$z_{il}$] 1 if $i$th patient is assigned to $l$th time intervals; 0 otherwise.
 \end{description}
 
 And the right equations are:
@@ -294,12 +301,13 @@ Stage II: Assignment to Physiotherapists
 	\lpeq[eq:constr05]{G_j = \sum_{i=1}^{n} t_i y_{ij}}{j \in \{1, \ldots , S\}}
 	\lpeq[eq:constr06]{\overline{G} = \sum_{j=1}^{S} G_j/S}{}\footnotemark
 	\lpeq[eq:constr07]{d_{k+1}^{+} = \sum_{j=1}^{S} \lvert N_{jk} - \overline{N} \rvert ,}{k \in \{1,2\}}\footnotemark
-	\lpeq[eq:constr08]{N_{jk} = \sum_{j=1}^{S} \sum_{i | tc_i = k} y_{ij},}{k \in \{1,2\}}
+	\lpnewsubeq[eq:constr08a]{N_{jk} = \sum_{i | tc_i = k} y_{ij},}{j \in \{1, \ldots , S\}, k \in \{1,2\}}
+	\lpsubeq[eq:eq:constr08b]{0 \le \sum_{k \in \{1,2\}} N_{jk} \le c,}{j \in \{1, \ldots , S\}}
 	\lpeq[eq:constr09]{\overline{N}_k = \sum_{j=1}^{S} N_{jk}/S,}{k \in \{1,2\}}
 	\lpnewsubeq[eq:constr10a]{d_4^+ = \sum_{i=1}^{n} \sum_{j=1}^{S} y_{ij} t_i}{}\footnotemark
 	\lpsubeq[eq:constr10b]{d_4^- = h S - d_4^+}{}
 	\lpeq[eq:constr11]{\sum_{j=1}^{S} y_{ij} = 1,}{i \in \{1, \ldots , n\}}\footnotemark
-	\lpeq[eq:constr12] {G_j \le h,}{j \in \{1, \ldots , S\}}
+	\lpeq[eq:constr12] {0 \le G_j \le h,}{j \in \{1, \ldots , S\}}
 \end{lpformulation}
 
 \footnotetext{The equation number (\ref{eq:constr04}) will be changed later in section \ref{sec:absolute}.}
@@ -338,7 +346,7 @@ Stage II: Assignment to Physiotherapists
 
 First we have to define next items:
 \begin{description}
-	\item[$B_j$] Binary variable.
+	\item[$B_j$] Binary variable, $\forall j \in \{1, \ldots , S\}$.
 	\item[$M_0$] Big $M$ parameter, such that $M_0 > \lvert G_j - \overline{G} \rvert$  $\forall j \in \{1, \ldots , S\}$. We can select $M_0$ in this way: 
 	
 	$h \ge G_j \ge \lvert G_j - \overline{G} \rvert \Rightarrow M_0 = h+1 > \lvert G_j -  \overline{G} \rvert$
@@ -348,7 +356,7 @@ and we can change equation (\ref{eq:constr04}) with:
 \begin{lpformulation}
 	\lpnewsubeq[eq:constr04a]{(G_j - \overline{G}) + M_0 \cdot B_j \ge 0,}{j \in \{1, \ldots , S\};}
 	\lpsubeq[eq:constr04b]{-(G_j - \overline{G}) + M_0 \cdot (1 - B_j) \ge 0,}{j \in \{1, \ldots , S\};}
-	\lpsubeq[eq:constr04c]{d_{1}^{+} = \sum_{i=1}^{S} (1-2B_j) (G_j - \overline{G})}{}
+	\lpsubeq[eq:constr04c]{d_{1}^{+} = \sum_{j=1}^{S} (1-2B_j) (G_j - \overline{G})}{}
 \end{lpformulation}
 We can see that:
 \begin{itemize}
